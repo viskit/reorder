@@ -1,6 +1,8 @@
 # viskit-reorder
 reorder web component
 
+![](https://raw.githubusercontent.com/viskit/viskit-reorder/main/show.gif)
+
 # Install
 
     npm i @viskit/viskit-reorder

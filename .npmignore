@@ -1,8 +1,8 @@
-#config
 /configs
 /src
 .gitignore
 /start
+show.gif
 
 # Logs
 logs
