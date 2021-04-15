@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "es2015",
+    "module": "es6",
+    "moduleResolution": "node",
+    "noEmitOnError": true,
+    "lib": ["esnext", "dom", "scripthost"],
+    "strict": false,
+    "esModuleInterop": false,
+    "allowSyntheticDefaultImports": true,
+    "experimentalDecorators": true,
+    "importHelpers": true,
+    "outDir": "./dist",
+    "sourceMap": true,
+    "inlineSources": true,
+    "rootDir": "./src",
+    "strictNullChecks": false
+  }
+}

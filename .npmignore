@@ -1,3 +1,8 @@
+#config
+/configs
+/src
+.gitignore
+/start
 
 # Logs
 logs

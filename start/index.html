@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <meta name="Description" content="Put your description here." />
+    <link rel=”manifest” href="manifest.json" />
+    <script>
+      process = {}
+    </script>
+    <style>
+      
+    </style>
+    <title>start test</title>
+  </head>
+
+  <body>
+    <viskit-reorder>
+      <div>item 1</div>
+      <div>item 2</div>
+      <div>item 3</div>
+      <div>item 4</div>
+    </viskit-reorder>
+    <script type="module" src="index.js"></script>
+    <script>
+      const reorder = document.querySelector("viskit-reorder");
+      reorder.addEventListener("onDrop",({detail:{complete}})=>{complete(true)})
+    </script>
+  </body>
+</html>
+
