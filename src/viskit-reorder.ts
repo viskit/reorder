@@ -309,9 +309,10 @@ export class Reorder extends LitElement {
     this.gesture.enable(true);
   }
 
-  render() {
-    return html`<slot></slot>`;
+  createRenderRoot(){
+    return this;
   }
+
 }
 
 window.customElements.define("viskit-reorder", Reorder);

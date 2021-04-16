@@ -1,5 +1,5 @@
 import { __awaiter, __decorate } from "tslib";
-import { html, LitElement, property } from "lit-element";
+import { LitElement, property } from "lit-element";
 import { createGesture } from "@ionic/core";
 const within = Symbol.for("within");
 export class Reorder extends LitElement {
@@ -189,8 +189,8 @@ export class Reorder extends LitElement {
         });
         this.gesture.enable(true);
     }
-    render() {
-        return html `<slot></slot>`;
+    createRenderRoot() {
+        return this;
     }
 }
 __decorate([

@@ -47,7 +47,7 @@ export declare class Reorder extends LitElement {
     updated(map: Map<string, any>): void;
     private _lastHoverData;
     firstUpdated(): void;
-    render(): import("lit-element").TemplateResult;
+    createRenderRoot(): this;
 }
 declare global {
     interface HTMLElementTagNameMap {
