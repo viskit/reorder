@@ -1,21 +1,21 @@
 import { __awaiter, __decorate } from "tslib";
-import { html, LitElement, property } from 'lit-element';
-import { createGesture } from '@ionic/core';
-const within = Symbol.for('within');
+import { html, LitElement, property } from "lit-element";
+import { createGesture } from "@ionic/core";
+const within = Symbol.for("within");
 export class Reorder extends LitElement {
     constructor() {
         super();
         this.dataCacheMap = null;
         this.containers = [this];
-        this.containerSelectors = '';
+        this.containerSelectors = "";
         this.timeout = 500;
-        this.direction = 'y';
+        this.direction = "y";
         this.complete = this.complete.bind(this);
         this.draggableFilter = this.draggableFilter.bind(this);
     }
     draggableFilter(el) {
         for (let container of this.containers) {
-            if (Array.from(container.children).find(dom => dom === el)) {
+            if (Array.from(container.children).find((dom) => dom === el)) {
                 return true;
             }
         }
@@ -23,8 +23,8 @@ export class Reorder extends LitElement {
     }
     hoverPosition(x, y, width, height, currentX, currentY) {
         return [
-            currentX <= x + width / 2 ? 'left' : 'right',
-            currentY <= y + height / 2 ? 'top' : 'bottom',
+            currentX <= x + width / 2 ? "left" : "right",
+            currentY <= y + height / 2 ? "top" : "bottom",
         ];
     }
     complete(bool = false) {
@@ -33,8 +33,8 @@ export class Reorder extends LitElement {
             if (bool) {
                 const { hoverContainer, hoverEl, hoverIndex } = this._lastHoverData;
                 hoverEl.insertAdjacentElement(hoverContainer.children.item(hoverIndex) === hoverEl
-                    ? 'beforebegin'
-                    : 'afterend', selectedItemEl);
+                    ? "beforebegin"
+                    : "afterend", selectedItemEl);
             }
             this.selectedItemEl = undefined;
         }
@@ -70,27 +70,27 @@ export class Reorder extends LitElement {
         });
     }
     updated(map) {
-        if (map.has('containerSelectors')) {
+        if (map.has("containerSelectors")) {
             this.updateContainers();
         }
     }
     firstUpdated() {
         let started = false, ct;
-        const onEnd = gestureDetail => {
+        const onEnd = (gestureDetail) => {
             if (started) {
                 started = false;
                 clearTimeout(ct);
-                this.dispatchEvent(new CustomEvent('onDrop', {
-                    detail: Object.assign({ gestureDetail, complete: this.complete }, this._lastHoverData),
+                this.dispatchEvent(new CustomEvent("onDrop", {
+                    detail: Object.assign({ el: this.selectedItemEl, gestureDetail, complete: this.complete }, this._lastHoverData),
                 }));
             }
         };
         this.gesture = createGesture({
             el: this,
-            direction: 'y',
-            gestureName: 'pzl-reorder-list',
+            direction: "y",
+            gestureName: "pzl-reorder-list",
             disableScroll: false,
-            canStart: gestureDetail => {
+            canStart: (gestureDetail) => {
                 ct = setTimeout(() => {
                     // generate DataCacheMap by containers
                     this.dataCacheMap = new Map();
@@ -111,11 +111,11 @@ export class Reorder extends LitElement {
                     else {
                         let childArr = Array.from(this.children);
                         const set = new Set(childArr);
-                        this.selectedItemEl = event.path.find(dom => set.has(dom));
+                        this.selectedItemEl = event.path.find((dom) => set.has(dom));
                     }
                     if (this.selectedItemEl) {
                         started = true;
-                        this.dispatchEvent(new CustomEvent('onStart', {
+                        this.dispatchEvent(new CustomEvent("onStart", {
                             detail: {
                                 el: this.selectedItemEl,
                                 gestureDetail,
@@ -127,7 +127,7 @@ export class Reorder extends LitElement {
                 }, this.timeout);
                 return true;
             },
-            onMove: gestureDetail => {
+            onMove: (gestureDetail) => {
                 clearTimeout(ct);
                 if (started) {
                     let hoverContainer;
@@ -149,11 +149,11 @@ export class Reorder extends LitElement {
                                             container;
                                         }
                                         const [hp, vp] = this.hoverPosition(x, y, width, height, gestureDetail.currentX, gestureDetail.currentY);
-                                        if (this.direction === 'y') {
-                                            vp === 'top' ? (hoverIndex = i) : (hoverIndex = i + 1);
+                                        if (this.direction === "y") {
+                                            vp === "top" ? (hoverIndex = i) : (hoverIndex = i + 1);
                                         }
                                         else {
-                                            hp === 'left' ? (hoverIndex = i) : (hoverIndex = i + 1);
+                                            hp === "left" ? (hoverIndex = i) : (hoverIndex = i + 1);
                                         }
                                         break;
                                     }
@@ -167,7 +167,7 @@ export class Reorder extends LitElement {
                         hoverContainer,
                         hoverIndex,
                     };
-                    this.dispatchEvent(new CustomEvent('onDrag', {
+                    this.dispatchEvent(new CustomEvent("onDrag", {
                         detail: {
                             el: this.selectedItemEl,
                             gestureDetail,
@@ -181,7 +181,7 @@ export class Reorder extends LitElement {
                 }
             },
             onEnd,
-            notCaptured: ev => {
+            notCaptured: (ev) => {
                 if (started) {
                     return onEnd(ev);
                 }
@@ -211,5 +211,5 @@ __decorate([
 __decorate([
     property({ attribute: false })
 ], Reorder.prototype, "hoverPosition", null);
-window.customElements.define('viskit-reorder', Reorder);
+window.customElements.define("viskit-reorder", Reorder);
 //# sourceMappingURL=viskit-reorder.js.map
