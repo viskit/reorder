@@ -2,7 +2,11 @@ import { html, LitElement, property } from "lit-element";
 import { createGesture, Gesture, GestureDetail } from "@ionic/core";
 type DataCacheMap = Map<
   HTMLElement,
-  { rect: DOMRect; itemDataMap: Map<HTMLElement, { rect: DOMRect }> }
+  {
+    rect: DOMRect;
+    index: number;
+    itemDataMap: Map<HTMLElement, { rect: DOMRect; index: number }>;
+  }
 >;
 
 export type onStartEvent = CustomEvent<{
@@ -89,12 +93,14 @@ export class Reorder extends LitElement {
     if (selectedItemEl) {
       if (bool) {
         const { hoverContainer, hoverEl, hoverIndex } = this._lastHoverData;
-        hoverEl.insertAdjacentElement(
-          hoverContainer.children.item(hoverIndex) === hoverEl
-            ? "beforebegin"
-            : "afterend",
-          selectedItemEl
-        );
+        if (hoverEl) {
+          hoverEl.insertAdjacentElement(
+            hoverContainer.children.item(hoverIndex) === hoverEl
+              ? "beforebegin"
+              : "afterend",
+            selectedItemEl
+          );
+        }
       }
 
       this.selectedItemEl = undefined;
@@ -175,14 +181,23 @@ export class Reorder extends LitElement {
         ct = setTimeout(() => {
           // generate DataCacheMap by containers
           this.dataCacheMap = new Map();
-          for (let container of this.containers) {
+
+          for (
+            let index = 0, len = this.containers.length;
+            index < len;
+            index++
+          ) {
+            const container = this.containers[index];
             const map = new Map();
             this.dataCacheMap.set(container, {
               rect: container.getBoundingClientRect(),
               itemDataMap: map,
+              index,
             });
-            for (let child of Array.from(container.children)) {
-              map.set(child, { rect: child.getBoundingClientRect() });
+            const childs = Array.from(container.children);
+            for (let i = 0, len = childs.length; i < len; i++) {
+              const child = childs[i];
+              map.set(child, { rect: child.getBoundingClientRect(), index: i });
             }
           }
 
@@ -309,10 +324,9 @@ export class Reorder extends LitElement {
     this.gesture.enable(true);
   }
 
-  createRenderRoot(){
+  createRenderRoot() {
     return this;
   }
-
 }
 
 window.customElements.define("viskit-reorder", Reorder);

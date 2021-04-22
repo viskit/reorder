@@ -94,14 +94,18 @@ export class Reorder extends LitElement {
                 ct = setTimeout(() => {
                     // generate DataCacheMap by containers
                     this.dataCacheMap = new Map();
-                    for (let container of this.containers) {
+                    for (let index = 0, len = this.containers.length; index < len; index++) {
+                        const container = this.containers[index];
                         const map = new Map();
                         this.dataCacheMap.set(container, {
                             rect: container.getBoundingClientRect(),
                             itemDataMap: map,
+                            index
                         });
-                        for (let child of Array.from(container.children)) {
-                            map.set(child, { rect: child.getBoundingClientRect() });
+                        const childs = Array.from(container.children);
+                        for (let i = 0, len = childs.length; i < len; i++) {
+                            const child = childs[i];
+                            map.set(child, { rect: child.getBoundingClientRect(), index: i });
                         }
                     }
                     const event = gestureDetail.event;

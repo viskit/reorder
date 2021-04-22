@@ -2,8 +2,10 @@ import { LitElement } from "lit-element";
 import { Gesture, GestureDetail } from "@ionic/core";
 declare type DataCacheMap = Map<HTMLElement, {
     rect: DOMRect;
+    index: number;
     itemDataMap: Map<HTMLElement, {
         rect: DOMRect;
+        index: number;
     }>;
 }>;
 export declare type onStartEvent = CustomEvent<{
