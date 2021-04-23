@@ -177,8 +177,8 @@ export class Reorder extends LitElement {
                                 overContainer(this.selectedItemEl, hoverContainer);
                                 if (_overContainer) {
                                     outContainer(this.selectedItemEl, _overContainer);
-                                    _overContainer = hoverContainer;
                                 }
+                                _overContainer = hoverContainer;
                             }
                             const childs = Array.from(container.children);
                             for (let i = 0, len = childs.length; i < len; i++) {
@@ -206,7 +206,7 @@ export class Reorder extends LitElement {
                         }
                         else {
                             if (_overContainer) {
-                                overContainer(this.selectedItemEl, _overContainer);
+                                outContainer(this.selectedItemEl, _overContainer);
                                 _overContainer = null;
                             }
                         }
