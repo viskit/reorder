@@ -1,6 +1,6 @@
 {
   "name": "@viskit/viskit-reorder",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "description": "reorder web component",
   "main": "dist/viskit-reorder.js",
   "scripts": {
@@ -13,7 +13,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/viskit/viskit-reorder/issues"
   },

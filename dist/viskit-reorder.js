@@ -78,7 +78,23 @@ export class Reorder extends LitElement {
         }
     }
     firstUpdated() {
-        let started = false, ct, startX = 0, startY = 0;
+        let started = false, ct, startX = 0, startY = 0, _overContainer = null;
+        const overContainer = (el, container) => {
+            this.dispatchEvent(new CustomEvent("onOverContainer", {
+                detail: {
+                    el,
+                    container,
+                },
+            }));
+        };
+        const outContainer = (el, container) => {
+            this.dispatchEvent(new CustomEvent("onOutContainer", {
+                detail: {
+                    el,
+                    container,
+                },
+            }));
+        };
         const onEnd = (gestureDetail) => {
             if (started) {
                 started = false;
@@ -132,14 +148,17 @@ export class Reorder extends LitElement {
                             startY = gestureDetail.currentY;
                             startX = gestureDetail.currentX;
                         }
+                        const container = this.selectedItemEl.parentElement;
                         this.dispatchEvent(new CustomEvent("onStart", {
                             detail: {
                                 el: this.selectedItemEl,
                                 gestureDetail,
-                                container: this.selectedItemEl.parentElement,
+                                container,
                                 reorder: this,
                             },
                         }));
+                        _overContainer = container;
+                        overContainer(this.selectedItemEl, container);
                     }
                 }, this.timeout);
                 return true;
@@ -154,6 +173,13 @@ export class Reorder extends LitElement {
                         const { x, y, width, height } = metadata.rect;
                         if (this[within](x, y, width, height, gestureDetail.currentX, gestureDetail.currentY)) {
                             hoverContainer = container;
+                            if (hoverContainer !== _overContainer) {
+                                overContainer(this.selectedItemEl, hoverContainer);
+                                if (_overContainer) {
+                                    outContainer(this.selectedItemEl, _overContainer);
+                                    _overContainer = hoverContainer;
+                                }
+                            }
                             const childs = Array.from(container.children);
                             for (let i = 0, len = childs.length; i < len; i++) {
                                 const child = childs[i];
@@ -177,6 +203,12 @@ export class Reorder extends LitElement {
                                 }
                             }
                             break;
+                        }
+                        else {
+                            if (_overContainer) {
+                                overContainer(this.selectedItemEl, _overContainer);
+                                _overContainer = null;
+                            }
                         }
                     }
                     this._lastHoverData = {

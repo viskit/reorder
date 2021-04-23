@@ -159,7 +159,30 @@ export class Reorder extends LitElement {
     let started = false,
       ct,
       startX = 0,
-      startY = 0;
+      startY = 0,
+      _overContainer: HTMLElement = null;
+
+    const overContainer = (el: HTMLElement, container: HTMLElement) => {
+      this.dispatchEvent(
+        new CustomEvent("onOverContainer", {
+          detail: {
+            el,
+            container,
+          },
+        })
+      );
+    };
+
+    const outContainer = (el: HTMLElement, container: HTMLElement) => {
+      this.dispatchEvent(
+        new CustomEvent("onOutContainer", {
+          detail: {
+            el,
+            container,
+          },
+        })
+      );
+    };
 
     const onEnd = (gestureDetail) => {
       if (started) {
@@ -228,16 +251,20 @@ export class Reorder extends LitElement {
               startX = gestureDetail.currentX;
             }
 
+            const container = this.selectedItemEl.parentElement;
+
             this.dispatchEvent(
               new CustomEvent("onStart", {
                 detail: {
                   el: this.selectedItemEl,
                   gestureDetail,
-                  container: this.selectedItemEl.parentElement,
+                  container,
                   reorder: this,
                 },
               })
             );
+            _overContainer = container;
+            overContainer(this.selectedItemEl, container);
           }
         }, this.timeout);
 
@@ -263,7 +290,17 @@ export class Reorder extends LitElement {
                 gestureDetail.currentY
               )
             ) {
+
               hoverContainer = container;
+
+              if(hoverContainer !== _overContainer){
+                overContainer(this.selectedItemEl,hoverContainer);
+                if(_overContainer){
+                  outContainer(this.selectedItemEl,_overContainer);
+                  _overContainer = hoverContainer;
+                }
+              }
+
               const childs = Array.from(container.children);
               for (let i = 0, len = childs.length; i < len; i++) {
                 const child = childs[i];
@@ -282,6 +319,7 @@ export class Reorder extends LitElement {
                       gestureDetail.currentY
                     )
                   ) {
+   
                     hoverEl = child as HTMLElement;
                     if (hoverEl === this.selectedItemEl) {
                       container;
@@ -306,6 +344,11 @@ export class Reorder extends LitElement {
                 }
               }
               break;
+            }else{
+              if(_overContainer){
+                overContainer(this.selectedItemEl,_overContainer);
+                _overContainer = null;
+              }
             }
           }
 
