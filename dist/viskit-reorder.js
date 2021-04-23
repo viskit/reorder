@@ -10,6 +10,7 @@ export class Reorder extends LitElement {
         this.containerSelectors = "";
         this.timeout = 500;
         this.direction = "y";
+        this.draggableOrigin = "center";
         this.complete = this.complete.bind(this);
         this.draggableFilter = this.draggableFilter.bind(this);
     }
@@ -32,9 +33,11 @@ export class Reorder extends LitElement {
         if (selectedItemEl) {
             if (bool) {
                 const { hoverContainer, hoverEl, hoverIndex } = this._lastHoverData;
-                hoverEl.insertAdjacentElement(hoverContainer.children.item(hoverIndex) === hoverEl
-                    ? "beforebegin"
-                    : "afterend", selectedItemEl);
+                if (hoverEl) {
+                    hoverEl.insertAdjacentElement(hoverContainer.children.item(hoverIndex) === hoverEl
+                        ? "beforebegin"
+                        : "afterend", selectedItemEl);
+                }
             }
             this.selectedItemEl = undefined;
         }
@@ -75,7 +78,7 @@ export class Reorder extends LitElement {
         }
     }
     firstUpdated() {
-        let started = false, ct;
+        let started = false, ct, startX = 0, startY = 0;
         const onEnd = (gestureDetail) => {
             if (started) {
                 started = false;
@@ -100,7 +103,7 @@ export class Reorder extends LitElement {
                         this.dataCacheMap.set(container, {
                             rect: container.getBoundingClientRect(),
                             itemDataMap: map,
-                            index
+                            index,
                         });
                         const childs = Array.from(container.children);
                         for (let i = 0, len = childs.length; i < len; i++) {
@@ -119,6 +122,16 @@ export class Reorder extends LitElement {
                     }
                     if (this.selectedItemEl) {
                         started = true;
+                        // TODO , use switch repeated when multi options.
+                        if (this.draggableOrigin === "center") {
+                            const rect = this.selectedItemEl.getBoundingClientRect();
+                            startY = rect.top + rect.height / 2;
+                            startX = rect.left + rect.width / 2;
+                        }
+                        else {
+                            startY = gestureDetail.currentY;
+                            startX = gestureDetail.currentX;
+                        }
                         this.dispatchEvent(new CustomEvent("onStart", {
                             detail: {
                                 el: this.selectedItemEl,
@@ -152,7 +165,7 @@ export class Reorder extends LitElement {
                                         if (hoverEl === this.selectedItemEl) {
                                             container;
                                         }
-                                        const [hp, vp] = this.hoverPosition(x, y, width, height, gestureDetail.currentX, gestureDetail.currentY);
+                                        const [hp, vp] = this.hoverPosition(x, y, width, height, startX + gestureDetail.deltaX, startY + gestureDetail.deltaY);
                                         if (this.direction === "y") {
                                             vp === "top" ? (hoverIndex = i) : (hoverIndex = i + 1);
                                         }
@@ -212,6 +225,9 @@ __decorate([
 __decorate([
     property({ type: String })
 ], Reorder.prototype, "direction", void 0);
+__decorate([
+    property({ type: String })
+], Reorder.prototype, "draggableOrigin", void 0);
 __decorate([
     property({ attribute: false })
 ], Reorder.prototype, "hoverPosition", null);

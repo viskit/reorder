@@ -72,6 +72,9 @@ export class Reorder extends LitElement {
   @property({ type: String })
   direction: "x" | "y" = "y";
 
+  @property({ type: String })
+  draggableOrigin: "center" | "pointer" = "center";
+
   @property({ attribute: false })
   hoverPosition(
     x: number,
@@ -154,7 +157,9 @@ export class Reorder extends LitElement {
 
   firstUpdated() {
     let started = false,
-      ct;
+      ct,
+      startX = 0,
+      startY = 0;
 
     const onEnd = (gestureDetail) => {
       if (started) {
@@ -202,6 +207,7 @@ export class Reorder extends LitElement {
           }
 
           const event = gestureDetail.event as any;
+
           if (this.draggableFilter) {
             this.selectedItemEl = event.path.find(this.draggableFilter);
           } else {
@@ -211,6 +217,17 @@ export class Reorder extends LitElement {
           }
           if (this.selectedItemEl) {
             started = true;
+
+            // TODO , use switch repeated when multi options.
+            if (this.draggableOrigin === "center") {
+              const rect = this.selectedItemEl.getBoundingClientRect();
+              startY = rect.top + rect.height / 2;
+              startX = rect.left + rect.width / 2;
+            } else {
+              startY = gestureDetail.currentY;
+              startX = gestureDetail.currentX;
+            }
+
             this.dispatchEvent(
               new CustomEvent("onStart", {
                 detail: {
@@ -274,8 +291,8 @@ export class Reorder extends LitElement {
                       y,
                       width,
                       height,
-                      gestureDetail.currentX,
-                      gestureDetail.currentY
+                      startX + gestureDetail.deltaX,
+                      startY + gestureDetail.deltaY
                     );
 
                     if (this.direction === "y") {

@@ -42,6 +42,7 @@ export declare class Reorder extends LitElement {
     timeout: number;
     draggableFilter(el: HTMLElement): boolean;
     direction: "x" | "y";
+    draggableOrigin: "center" | "pointer";
     hoverPosition(x: number, y: number, width: number, height: number, currentX: number, currentY: number): ["left" | "right", "top" | "bottom"];
     complete(bool?: boolean): void;
     [within](x: any, y: any, width: any, height: any, currentX: any, currentY: any): boolean;
