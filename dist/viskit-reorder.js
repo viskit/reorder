@@ -204,12 +204,6 @@ export class Reorder extends LitElement {
                             }
                             break;
                         }
-                        else {
-                            if (_overContainer) {
-                                outContainer(this.selectedItemEl, _overContainer);
-                                _overContainer = null;
-                            }
-                        }
                     }
                     this._lastHoverData = {
                         hoverEl,
