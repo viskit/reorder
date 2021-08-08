@@ -28,7 +28,11 @@
     <script   src="index.build.js"></script>
     <script>
       const reorder = document.querySelector("viskit-reorder");
-      reorder.addEventListener("onDrop",({detail:{complete}})=>{complete(true)})
+      reorder.addEventListener("onOverContainer",({detail:{complete}})=>{console.log("onOverContainer")})
+      reorder.addEventListener("onOutContainer",({detail:{complete}})=>{console.log("onOutContainer")})
+      reorder.addEventListener("onDrop",({detail:{complete}})=>{console.log("onDrop")})
+      reorder.addEventListener("onStart",({detail:{complete}})=>{console.log("onStart")})
+      reorder.addEventListener("onDrag",({detail:{complete}})=>{console.log("onDrag")})
     </script>
   </body>
 </html>

@@ -2,14 +2,14 @@ const conf = {
   mode: 'development',
   resolve: {
     alias: {
-      process: 'process/browser',
+      // process: 'process/browser',
     },
     extensions: ['.ts', '.tsx', '.js'],
     fallback: {
-      url: require.resolve('url'),
-      buffer: require.resolve('buffer/'),
-      util: require.resolve('util/'),
-      stream: require.resolve('stream-browserify/'),
+      // url: require.resolve('url'),
+      // buffer: require.resolve('buffer/'),
+      // util: require.resolve('util/'),
+      // stream: require.resolve('stream-browserify/'),
     },
   },
   plugins: [],
