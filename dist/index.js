@@ -1,8 +1,44 @@
-import { __awaiter, __decorate } from "tslib";
-import { LitElement, property } from "lit-element";
-import { createGesture } from "@ionic/core";
+/******/ // The require scope
+/******/ var __webpack_require__ = {};
+/******/ 
+/************************************************************************/
+/******/ /* webpack/runtime/define property getters */
+/******/ (() => {
+/******/ 	// define getter functions for harmony exports
+/******/ 	__webpack_require__.d = (exports, definition) => {
+/******/ 		for(var key in definition) {
+/******/ 			if(__webpack_require__.o(definition, key) && !__webpack_require__.o(exports, key)) {
+/******/ 				Object.defineProperty(exports, key, { enumerable: true, get: definition[key] });
+/******/ 			}
+/******/ 		}
+/******/ 	};
+/******/ })();
+/******/ 
+/******/ /* webpack/runtime/hasOwnProperty shorthand */
+/******/ (() => {
+/******/ 	__webpack_require__.o = (obj, prop) => (Object.prototype.hasOwnProperty.call(obj, prop))
+/******/ })();
+/******/ 
+/************************************************************************/
+var __webpack_exports__ = {};
+
+// EXPORTS
+__webpack_require__.d(__webpack_exports__, {
+  "t": () => (/* binding */ Reorder)
+});
+
+;// CONCATENATED MODULE: external "tslib"
+const external_tslib_namespaceObject = require("tslib");
+;// CONCATENATED MODULE: external "lit-element"
+const external_lit_element_namespaceObject = require("lit-element");
+;// CONCATENATED MODULE: external "@ionic/core"
+const core_namespaceObject = require("@ionic/core");
+;// CONCATENATED MODULE: ./src/index.ts
+
+
+
 const within = Symbol.for("within");
-export class Reorder extends LitElement {
+class Reorder extends external_lit_element_namespaceObject.LitElement {
     constructor() {
         super();
         this.dataCacheMap = null;
@@ -49,7 +85,7 @@ export class Reorder extends LitElement {
             y + height >= currentY);
     }
     updateContainers() {
-        return __awaiter(this, void 0, void 0, function* () {
+        return (0,external_tslib_namespaceObject.__awaiter)(this, void 0, void 0, function* () {
             setTimeout(() => {
                 this.containers = [];
                 if (this.containerSelectors) {
@@ -104,7 +140,7 @@ export class Reorder extends LitElement {
                 }));
             }
         };
-        this.gesture = createGesture({
+        this.gesture = (0,core_namespaceObject.createGesture)({
             el: this,
             direction: "y",
             gestureName: "pzl-reorder-list",
@@ -236,26 +272,28 @@ export class Reorder extends LitElement {
         return this;
     }
 }
-__decorate([
-    property({ attribute: false })
+(0,external_tslib_namespaceObject.__decorate)([
+    (0,external_lit_element_namespaceObject.property)({ attribute: false })
 ], Reorder.prototype, "containers", void 0);
-__decorate([
-    property({ attribute: false })
+(0,external_tslib_namespaceObject.__decorate)([
+    (0,external_lit_element_namespaceObject.property)({ attribute: false })
 ], Reorder.prototype, "containerSelectors", void 0);
-__decorate([
-    property({ type: Number })
+(0,external_tslib_namespaceObject.__decorate)([
+    (0,external_lit_element_namespaceObject.property)({ type: Number })
 ], Reorder.prototype, "timeout", void 0);
-__decorate([
-    property({ attribute: false })
+(0,external_tslib_namespaceObject.__decorate)([
+    (0,external_lit_element_namespaceObject.property)({ attribute: false })
 ], Reorder.prototype, "draggableFilter", null);
-__decorate([
-    property({ type: String })
+(0,external_tslib_namespaceObject.__decorate)([
+    (0,external_lit_element_namespaceObject.property)({ type: String })
 ], Reorder.prototype, "direction", void 0);
-__decorate([
-    property({ type: String })
+(0,external_tslib_namespaceObject.__decorate)([
+    (0,external_lit_element_namespaceObject.property)({ type: String })
 ], Reorder.prototype, "draggableOrigin", void 0);
-__decorate([
-    property({ attribute: false })
+(0,external_tslib_namespaceObject.__decorate)([
+    (0,external_lit_element_namespaceObject.property)({ attribute: false })
 ], Reorder.prototype, "hoverPosition", null);
 window.customElements.define("viskit-reorder", Reorder);
-//# sourceMappingURL=viskit-reorder.js.map
+
+var __webpack_exports__Reorder = __webpack_exports__.t;
+export { __webpack_exports__Reorder as Reorder };

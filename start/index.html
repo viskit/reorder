@@ -7,7 +7,6 @@
       content="width=device-width, initial-scale=1.0, viewport-fit=cover"
     />
     <meta name="Description" content="Put your description here." />
-    <link rel=”manifest” href="manifest.json" />
     <script>
       process = {}
       document.oncontextmenu=function(e){return false;}
@@ -19,21 +18,7 @@
   </head>
 
   <body>
-    <viskit-reorder>
-      <div>item 1</div>
-      <div>item 2</div>
-      <div>item 3</div>
-      <div>item 4</div>
-    </viskit-reorder>
-    <script   src="index.build.js"></script>
-    <script>
-      const reorder = document.querySelector("viskit-reorder");
-      reorder.addEventListener("onOverContainer",({detail:{complete}})=>{console.log("onOverContainer")})
-      reorder.addEventListener("onOutContainer",({detail:{complete}})=>{console.log("onOutContainer")})
-      reorder.addEventListener("onDrop",({detail:{complete}})=>{console.log("onDrop")})
-      reorder.addEventListener("onStart",({detail:{complete}})=>{console.log("onStart")})
-      reorder.addEventListener("onDrag",({detail:{complete}})=>{console.log("onDrag")})
-    </script>
+  <script src="index.js"></script>
   </body>
 </html>
 
