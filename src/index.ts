@@ -1,5 +1,7 @@
 import { html, LitElement, property } from "lit-element";
 import { createGesture, Gesture, GestureDetail } from "@ionic/core";
+import { debounce } from "lodash";
+
 type DataCacheMap = Map<
   HTMLElement,
   {
@@ -9,48 +11,49 @@ type DataCacheMap = Map<
   }
 >;
 
-export type onStartEvent = CustomEvent<{
-  el: HTMLElement;
-  gestureDetail: GestureDetail;
+type StartEventDetail = GestureDetail & {
+  draggable: HTMLElement;
   container: HTMLElement;
-  reorder: Reorder;
-}>;
+};
 
-export type onDragEvent = CustomEvent<{
-  el: HTMLElement;
-  gestureDetail: GestureDetail;
-  container: HTMLElement;
-  reorder: Reorder;
-  hoverEl: HTMLElement;
-  hoverContainer: HTMLElement;
+type DragEventDetail = StartEventDetail;
+
+type ReorderEventDetail = StartEventDetail & {
+  hoverable: HTMLElement;
   hoverIndex: number;
-}>;
+  hoverContainer: HTMLElement;
+};
 
-export type onDropEvent = CustomEvent<{
-  el: HTMLElement;
-  gestureDetail: GestureDetail;
+type DropEventDetail = ReorderEventDetail & {
   complete: (bool: boolean) => void;
-  hoverEl: HTMLElement;
-  hoverContainer: HTMLElement;
-  hoverIndex: number;
-}>;
+};
 
-const within = Symbol.for("within");
+export type onStartEvent = CustomEvent<StartEventDetail>;
+
+export type onDragEvent = CustomEvent<StartEventDetail>;
+
+export type onReorderEvent = CustomEvent<ReorderEventDetail>;
+
+export type onDropEvent = CustomEvent<DropEventDetail>;
+
+const within = Symbol.for("within"); // TODO
 
 export class Reorder extends LitElement {
+  public canStart(
+    args: GestureDetail & { draggable: HTMLElement; container: HTMLElement }
+  ) {
+    return true;
+  }
+
   dataCacheMap: DataCacheMap = null;
 
   constructor() {
     super();
-    this.complete = this.complete.bind(this);
     this.draggableFilter = this.draggableFilter.bind(this);
   }
 
   gesture: Gesture;
 
-  private selectedItemEl: HTMLElement;
-
-  @property({ attribute: false })
   containers: HTMLElement[] = [this];
 
   @property({ attribute: false })
@@ -68,6 +71,46 @@ export class Reorder extends LitElement {
     }
     return false;
   }
+
+  private reorder = debounce((gestureDetail: GestureDetail) => {
+    const els = gestureDetail.event.composedPath();
+    const containerIndex = els.findIndex((el) =>
+      this.containers.includes(el as HTMLElement)
+    );
+
+    if (containerIndex !== -1) {
+      const hoverContainer = els[containerIndex] as HTMLElement;
+      const children = Array.from(hoverContainer.children);
+      const hoverIndex = children.findIndex((el) => els.includes(el));
+
+      if (hoverIndex !== -1) {
+        const hoverable = children[hoverIndex] as HTMLElement;
+        const prevHoverData = gestureDetail.data;
+        if (
+          prevHoverData.hoverable !== hoverable ||
+          prevHoverData.hoverContainer !== hoverContainer ||
+          prevHoverData.hoverIndex !== hoverIndex
+        ) {
+          gestureDetail.data.hoverable = hoverable;
+          gestureDetail.data.hoverIndex = hoverIndex;
+          gestureDetail.data.hoverContainer = hoverContainer;
+
+          this.dispatchEvent(
+            new CustomEvent<ReorderEventDetail>("onReorder", {
+              detail: {
+                ...gestureDetail,
+                hoverable,
+                hoverContainer,
+                hoverIndex,
+                draggable: gestureDetail.data.draggable,
+                container: gestureDetail.data.container,
+              },
+            })
+          );
+        }
+      }
+    }
+  }, 300);
 
   @property({ type: String })
   direction: "x" | "y" = "y";
@@ -90,26 +133,6 @@ export class Reorder extends LitElement {
     ];
   }
 
-  complete(bool = false) {
-    const selectedItemEl = this.selectedItemEl;
-
-    if (selectedItemEl) {
-      if (bool) {
-        const { hoverContainer, hoverEl, hoverIndex } = this._lastHoverData;
-        if (hoverEl) {
-          hoverEl.insertAdjacentElement(
-            hoverContainer.children.item(hoverIndex) === hoverEl
-              ? "beforebegin"
-              : "afterend",
-            selectedItemEl
-          );
-        }
-      }
-
-      this.selectedItemEl = undefined;
-    }
-  }
-
   [within](x, y, width, height, currentX, currentY) {
     return (
       x <= currentX &&
@@ -119,35 +142,48 @@ export class Reorder extends LitElement {
     );
   }
 
-  async updateContainers() {
-    setTimeout(() => {
-      this.containers = [];
-      if (this.containerSelectors) {
-        for (let selector of this.containerSelectors) {
-          const containerList = this.querySelectorAll(selector);
-          this.containers = [
-            ...this.containers,
-            ...Array.from<HTMLElement>(
-              containerList as NodeListOf<HTMLElement>
-            ),
-          ];
-        }
-        this.containers = this.containers.sort((ac, bc) => {
-          const { top: btop } = bc.getBoundingClientRect();
-          const { top: atop } = ac.getBoundingClientRect();
-          return atop - btop;
-        });
-      } else {
-        this.containers = [this];
+  updateContainers() {
+    this.containers = [];
+    if (this.containerSelectors) {
+      for (let selector of this.containerSelectors) {
+        const containerList = this.querySelectorAll(selector);
+        this.containers = [
+          ...this.containers,
+          ...Array.from<HTMLElement>(containerList as NodeListOf<HTMLElement>),
+        ];
       }
-
-      
-    });
+      this.containers = this.containers.sort((ac, bc) => {
+        const { top: btop } = bc.getBoundingClientRect();
+        const { top: atop } = ac.getBoundingClientRect();
+        return atop - btop;
+      });
+    } else {
+      this.containers = [this];
+    }
   }
 
   updated(map: Map<string, any>) {
     if (map.has("containerSelectors")) {
       this.updateContainers();
+    }
+  }
+
+  calcCacheData() {
+    this.dataCacheMap = new Map();
+
+    for (let index = 0, len = this.containers.length; index < len; index++) {
+      const container = this.containers[index];
+      const map = new Map();
+      this.dataCacheMap.set(container, {
+        rect: container.getBoundingClientRect(),
+        itemDataMap: map,
+        index,
+      });
+      const childs = Array.from(container.children);
+      for (let i = 0, len = childs.length; i < len; i++) {
+        const child = childs[i];
+        map.set(child, { rect: child.getBoundingClientRect(), index: i });
+      }
     }
   }
 
@@ -157,45 +193,44 @@ export class Reorder extends LitElement {
     hoverIndex: number;
   };
 
+  public mutation() {
+    this.updateContainers();
+    this.calcCacheData();
+  }
+
   firstUpdated() {
     let started = false,
       ct,
       startX = 0,
-      startY = 0,
-      _overContainer: HTMLElement = null;
-
-    const overContainer = (el: HTMLElement, container: HTMLElement) => {
-      this.dispatchEvent(
-        new CustomEvent("onOverContainer", {
-          detail: {
-            el,
-            container,
-          },
-        })
-      );
-    };
-
-    const outContainer = (el: HTMLElement, container: HTMLElement) => {
-      this.dispatchEvent(
-        new CustomEvent("onOutContainer", {
-          detail: {
-            el,
-            container,
-          },
-        })
-      );
-    };
+      startY = 0;
 
     const onEnd = (gestureDetail) => {
       if (started) {
         started = false;
         clearTimeout(ct);
         this.dispatchEvent(
-          new CustomEvent("onDrop", {
+          new CustomEvent<DropEventDetail>("onDrop", {
             detail: {
-              el: this.selectedItemEl,
-              gestureDetail,
-              complete: this.complete,
+              ...gestureDetail,
+              complete: (bool = false) => {
+                const selectedItemEl = gestureDetail.data
+                  .draggable as HTMLElement;
+
+                if (selectedItemEl) {
+                  if (bool) {
+                    const { hoverContainer, hoverEl, hoverIndex } =
+                      this._lastHoverData;
+                    if (hoverEl) {
+                      hoverEl.insertAdjacentElement(
+                        hoverContainer.children.item(hoverIndex) === hoverEl
+                          ? "beforebegin"
+                          : "afterend",
+                        selectedItemEl
+                      );
+                    }
+                  }
+                }
+              },
               ...this._lastHoverData,
             },
           })
@@ -207,66 +242,44 @@ export class Reorder extends LitElement {
       direction: "y",
       gestureName: "pzl-reorder-list",
       disableScroll: false,
-      canStart: (gestureDetail) => {
+      canStart: (gestureDetail: GestureDetail) => {
         ct = setTimeout(() => {
           // generate DataCacheMap by containers
-          this.dataCacheMap = new Map();
 
-          for (
-            let index = 0, len = this.containers.length;
-            index < len;
-            index++
-          ) {
-            const container = this.containers[index];
-            const map = new Map();
-            this.dataCacheMap.set(container, {
-              rect: container.getBoundingClientRect(),
-              itemDataMap: map,
-              index,
-            });
-            const childs = Array.from(container.children);
-            for (let i = 0, len = childs.length; i < len; i++) {
-              const child = childs[i];
-              map.set(child, { rect: child.getBoundingClientRect(), index: i });
-            }
-          }
+          this.calcCacheData();
 
           const event = gestureDetail.event as any;
+          const path =
+            event.path || (event.composedPath && event.composedPath());
+          const draggable = path.find(this.draggableFilter) as HTMLElement;
 
-          if (this.draggableFilter) {
-            this.selectedItemEl = event.path.find(this.draggableFilter);
-          } else {
-            let childArr = Array.from(this.children);
-            const set = new Set(childArr);
-            this.selectedItemEl = event.path.find((dom) => set.has(dom));
-          }
-          if (this.selectedItemEl) {
-            started = true;
+          if (draggable) {
+            const container = draggable.parentElement;
 
-            // TODO , use switch repeated when multi options.
-            if (this.draggableOrigin === "center") {
-              const rect = this.selectedItemEl.getBoundingClientRect();
-              startY = rect.top + rect.height / 2;
-              startX = rect.left + rect.width / 2;
-            } else {
-              startY = gestureDetail.currentY;
-              startX = gestureDetail.currentX;
-            }
+            gestureDetail.data = {
+              draggable,
+              container,
+            };
 
-            const container = this.selectedItemEl.parentElement;
-
-            this.dispatchEvent(
-              new CustomEvent("onStart", {
-                detail: {
-                  el: this.selectedItemEl,
-                  gestureDetail,
-                  container,
-                  reorder: this,
-                },
+            if (
+              this.canStart({
+                ...gestureDetail,
+                draggable,
+                container,
               })
-            );
-            _overContainer = container;
-            overContainer(this.selectedItemEl, container);
+            ) {
+              started = true;
+
+              this.dispatchEvent(
+                new CustomEvent<StartEventDetail>("onStart", {
+                  detail: {
+                    ...gestureDetail,
+                    draggable,
+                    container,
+                  },
+                })
+              );
+            }
           }
         }, this.timeout);
 
@@ -276,98 +289,16 @@ export class Reorder extends LitElement {
       onMove: (gestureDetail) => {
         clearTimeout(ct);
         if (started) {
-          let hoverContainer: HTMLElement;
-          let hoverEl: HTMLElement;
-          let hoverIndex: number;
-
-          for (let [container, metadata] of this.dataCacheMap) {
-            const { x, y, width, height } = metadata.rect;
-            if (
-              this[within](
-                x,
-                y,
-                width,
-                height,
-                gestureDetail.currentX,
-                gestureDetail.currentY
-              )
-            ) {
-
-              hoverContainer = container;
-
-              if(hoverContainer !== _overContainer){
-                overContainer(this.selectedItemEl,hoverContainer);
-                if(_overContainer){
-                  outContainer(this.selectedItemEl,_overContainer);
-                }
-                _overContainer = hoverContainer;
-              }
-
-              const childs = Array.from(container.children);
-              for (let i = 0, len = childs.length; i < len; i++) {
-                const child = childs[i];
-                const data = metadata.itemDataMap.get(child as HTMLElement);
-                if (data) {
-                  const {
-                    rect: { x, y, width, height },
-                  } = data;
-                  if (
-                    this[within](
-                      x,
-                      y,
-                      width,
-                      height,
-                      gestureDetail.currentX,
-                      gestureDetail.currentY
-                    )
-                  ) {
-   
-                    hoverEl = child as HTMLElement;
-                    if (hoverEl === this.selectedItemEl) {
-                      container;
-                    }
-                    const [hp, vp] = this.hoverPosition(
-                      x,
-                      y,
-                      width,
-                      height,
-                      startX + gestureDetail.deltaX,
-                      startY + gestureDetail.deltaY
-                    );
-
-                    if (this.direction === "y") {
-                      vp === "top" ? (hoverIndex = i) : (hoverIndex = i + 1);
-                    } else {
-                      hp === "left" ? (hoverIndex = i) : (hoverIndex = i + 1);
-                    }
-
-                    break;
-                  }
-                }
-              }
-              break;
-            } 
-          }
-
-          this._lastHoverData = {
-            hoverEl,
-            hoverContainer,
-            hoverIndex,
-          };
-
           this.dispatchEvent(
-            new CustomEvent("onDrag", {
+            new CustomEvent<DragEventDetail>("onDrag", {
               detail: {
-                el: this.selectedItemEl,
-                gestureDetail,
-                container: this.selectedItemEl.parentElement, // TODO
-                reorder: this,
-                hoverEl,
-                hoverContainer,
-                hoverIndex,
+                ...gestureDetail,
+                draggable: gestureDetail.data.draggable,
+                container: gestureDetail.data.container,
               },
             })
           );
+          this.reorder(gestureDetail);
         }
       },
       onEnd,

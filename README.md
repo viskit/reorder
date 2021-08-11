@@ -4,13 +4,46 @@ reorder web component
 
 # API
 
-### containers? : string[] | HTMLElement[] | ()=>HTMLElement[]
+### mutation()
+
+will call `calcCacheData()` and generate `containers`
+
+### calcCacheData()
+
+### enable = true
+
+### longPressTimeout = 300
+
+### containerSelectors? : string[]
+
+### containers: HTMLElement[]
 
 default [this]
+
+### triggerPoint = "center-center"
+
+```ts
+type TriggerPoint = "top-left" |
+                    "top-center" |
+                    "top-right" |
+                    "center-left" |
+                    "center-center" |
+                    "center-right" |
+                    "bottom-left" |
+                    "bottom-center" |
+                    "bottom-right" |
+```
+
+### canStart
+
+```ts
+canStart(args:  GestureDetail & { draggable: HTMLElement; container: HTMLElement; }): boolean;
+```
 
 ### onStart
 
 ```ts
+
 onStart({
     detail: GestureDetail &
     { data: { draggable: HTMLElement; container: HTMLElement; } }
@@ -23,9 +56,22 @@ onStart({
 onDrag({
     detail: GestureDetail &
     { data: {
+        draggable: HTMLElement;
+        container: HTMLElement;
+    } }
+});
+```
+
+### onReorder
+
+```ts
+onReorder({
+    detail: GestureDetail &
+    { data: {
             draggable: HTMLElement;
             container: HTMLElement;
             hoverable: HTMLElement;
+            hoverIndex: number;
             hoverContainer: HTMLElement;
     } }
 });
@@ -40,7 +86,10 @@ onDrop({
             draggable: HTMLElement;
             container: HTMLElement;
             hoverable: HTMLElement;
+            hoverIndex: number;
             hoverContainer: HTMLElement;
+
+            complete:(bool:boolean)=>void;
     } }
 });
 ```

@@ -10,12 +10,25 @@ class Demo extends LitElement {
   @query(".scroll")
   scrollEl: HTMLDivElement;
 
+  @query(".list")
+  list: HTMLDivElement;
+
+
   @state()
   offset = 0;
 
   private cloneEl: HTMLElement;
 
   firstUpdated() {
+
+    const resizeObserver = new ResizeObserver(entries => {
+      for (let entry of entries) {
+        console.log(entry);
+      }
+    });
+    resizeObserver.observe(this.list);
+
+    
     const gesture = createGesture({
       gestureName: "test",
       el: this.el,
