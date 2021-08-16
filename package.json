@@ -22,7 +22,7 @@
     "@4tw/cypress-drag-drop": "^1.8.0",
     "@types/lodash": "^4.14.172",
     "@viskit/webpack-configs": "^0.0.1",
-    "cypress": "^8.2.0"
+    "cypress": "8.2.0"
   },
   "dependencies": {
     "@ionic/core": "^5.6.13",
