@@ -2,12 +2,23 @@ import { html, LitElement, property } from "lit-element";
 import { createGesture, Gesture, GestureDetail } from "@ionic/core";
 import { debounce } from "lodash";
 
+export type DraggableOrigin =
+   "current"
+  | "top-left"
+  | "top-center"
+  | "top-right"
+  | "center-left"
+  | "center-center"
+  | "center-right"
+  | "bottom-left"
+  | "bottom-center"
+  | "bottom-right";
+
 type DataCacheMap = Map<
   HTMLElement,
   {
     rect: DOMRect;
-    index: number;
-    itemDataMap: Map<HTMLElement, { rect: DOMRect; index: number }>;
+    index?: number;
   }
 >;
 
@@ -22,6 +33,14 @@ type ReorderEventDetail = StartEventDetail & {
   hoverable: HTMLElement;
   hoverIndex: number;
   hoverContainer: HTMLElement;
+
+  draggableIndex:number;
+  hoverableRect: DOMRect;
+  draggableRect: DOMRect;
+
+  // under draggable origin point
+  x: number;
+  y: number;
 };
 
 type DropEventDetail = ReorderEventDetail & {
@@ -36,8 +55,6 @@ export type onReorderEvent = CustomEvent<ReorderEventDetail>;
 
 export type onDropEvent = CustomEvent<DropEventDetail>;
 
-const within = Symbol.for("within"); // TODO
-
 export class Reorder extends LitElement {
   public canStart(
     args: GestureDetail & { draggable: HTMLElement; container: HTMLElement }
@@ -45,14 +62,14 @@ export class Reorder extends LitElement {
     return true;
   }
 
+  @property({type:String})
+  draggableOrigin: DraggableOrigin = "center-center";
+
   dataCacheMap: DataCacheMap = null;
 
-  constructor() {
-    super();
-    this.draggableFilter = this.draggableFilter.bind(this);
-  }
-
   gesture: Gesture;
+
+  private gestureDetail: GestureDetail;
 
   containers: HTMLElement[] = [this];
 
@@ -62,61 +79,65 @@ export class Reorder extends LitElement {
   @property({ type: Number })
   timeout = 500;
 
-  @property({ attribute: false })
-  draggableFilter(el: HTMLElement) {
-    for (let container of this.containers) {
-      if (Array.from(container.children).find((dom) => dom === el)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
   private reorder = debounce((gestureDetail: GestureDetail) => {
-    const els = gestureDetail.event.composedPath();
-    const containerIndex = els.findIndex((el) =>
-      this.containers.includes(el as HTMLElement)
-    );
+    let {
+      currentX,
+      currentY,
+      data: { triggerOffsetX, triggerOffsetY , draggable},
+    } = gestureDetail;
 
-    if (containerIndex !== -1) {
-      const hoverContainer = els[containerIndex] as HTMLElement;
-      const children = Array.from(hoverContainer.children);
-      const hoverIndex = children.findIndex((el) => els.includes(el));
+    currentX += this.offsetX;
+    currentY += this.offsetY;
 
-      if (hoverIndex !== -1) {
-        const hoverable = children[hoverIndex] as HTMLElement;
-        const prevHoverData = gestureDetail.data;
-        if (
-          prevHoverData.hoverable !== hoverable ||
-          prevHoverData.hoverContainer !== hoverContainer ||
-          prevHoverData.hoverIndex !== hoverIndex
-        ) {
-          gestureDetail.data.hoverable = hoverable;
-          gestureDetail.data.hoverIndex = hoverIndex;
-          gestureDetail.data.hoverContainer = hoverContainer;
+    const triggerX = currentX + triggerOffsetX + this.offsetX;
+    const triggerY = currentY + triggerOffsetY + this.offsetY;
 
-          this.dispatchEvent(
-            new CustomEvent<ReorderEventDetail>("onReorder", {
-              detail: {
-                ...gestureDetail,
-                hoverable,
-                hoverContainer,
-                hoverIndex,
-                draggable: gestureDetail.data.draggable,
-                container: gestureDetail.data.container,
-              },
-            })
-          );
+    for (let hoverContainer of this.containers) {
+      const { x, y, width, height } = this.dataCacheMap.get(hoverContainer).rect;
+      if (this.within(x, y, width, height, triggerX, triggerY)) {
+        const childs = Array.from(hoverContainer.children);
+        for (let i = 0, len = childs.length; i < len; i++) {
+          const child = childs[i];
+          const data = this.dataCacheMap.get(child as HTMLElement);
+          if (data) {
+            const {
+              rect: { x, y, width, height },
+              index,
+            } = data;
+            if ( this.within(x, y, width, height, triggerX, triggerY)) {
+
+              const hoverable = child as HTMLElement;
+              const hoverIndex = index;
+              const {index:draggableIndex,rect: draggableRect} = this.dataCacheMap.get(gestureDetail.data.draggable as HTMLElement);
+              this.dispatchEvent(
+                new CustomEvent<ReorderEventDetail>("onReorder", {
+                  detail: {
+                    ...gestureDetail,
+                    hoverable,
+                    hoverContainer,
+                    hoverIndex,
+                    draggableIndex,
+                    draggable: gestureDetail.data.draggable,
+                    container: gestureDetail.data.container,
+                    draggableRect ,
+                    hoverableRect : this.dataCacheMap.get(hoverable).rect,
+                    x: triggerX,
+                    y: triggerY,
+                  },
+                })
+              );
+
+              break;
+            }
+          }
         }
+        break;
       }
     }
-  }, 300);
+  }, 30);
 
   @property({ type: String })
   direction: "x" | "y" = "y";
-
-  @property({ type: String })
-  draggableOrigin: "center" | "pointer" = "center";
 
   @property({ attribute: false })
   hoverPosition(
@@ -133,7 +154,7 @@ export class Reorder extends LitElement {
     ];
   }
 
-  [within](x, y, width, height, currentX, currentY) {
+  private within(x, y, width, height, currentX, currentY) {
     return (
       x <= currentX &&
       x + width >= currentX &&
@@ -142,7 +163,7 @@ export class Reorder extends LitElement {
     );
   }
 
-  updateContainers() {
+  private updateContainers() {
     this.containers = [];
     if (this.containerSelectors) {
       for (let selector of this.containerSelectors) {
@@ -168,7 +189,7 @@ export class Reorder extends LitElement {
     }
   }
 
-  calcCacheData() {
+  private calcCacheData() {
     this.dataCacheMap = new Map();
 
     for (let index = 0, len = this.containers.length; index < len; index++) {
@@ -176,13 +197,11 @@ export class Reorder extends LitElement {
       const map = new Map();
       this.dataCacheMap.set(container, {
         rect: container.getBoundingClientRect(),
-        itemDataMap: map,
-        index,
       });
       const childs = Array.from(container.children);
       for (let i = 0, len = childs.length; i < len; i++) {
-        const child = childs[i];
-        map.set(child, { rect: child.getBoundingClientRect(), index: i });
+        const child = childs[i] as HTMLElement;
+        this.dataCacheMap.set(child, { rect: child.getBoundingClientRect(), index: i });
       }
     }
   }
@@ -193,20 +212,30 @@ export class Reorder extends LitElement {
     hoverIndex: number;
   };
 
-  public mutation() {
+  private offsetX = 0;
+  private offsetY = 0;
+
+  public mutation = debounce((offset?: { x: number; y: number }) => {
     this.updateContainers();
-    this.calcCacheData();
-  }
+    if (offset) {
+      this.offsetX = offset.x;
+      this.offsetY = offset.y;
+    } else {
+      this.calcCacheData();
+    }
+    if(this.gestureDetail){
+      this.reorder(this.gestureDetail);
+    }
+  }, 50);
 
   firstUpdated() {
     let started = false,
-      ct,
-      startX = 0,
-      startY = 0;
+      ct;
 
     const onEnd = (gestureDetail) => {
       if (started) {
         started = false;
+        this.gestureDetail = null;
         clearTimeout(ct);
         this.dispatchEvent(
           new CustomEvent<DropEventDetail>("onDrop", {
@@ -248,14 +277,47 @@ export class Reorder extends LitElement {
 
           this.calcCacheData();
 
-          const event = gestureDetail.event as any;
-          const path =
-            event.path || (event.composedPath && event.composedPath());
-          const draggable = path.find(this.draggableFilter) as HTMLElement;
+          let draggable: HTMLElement, container: HTMLElement;
+          let draggableRect: DOMRect;
+
+          for (let _container of this.containers) {
+            const {rect} = this.dataCacheMap.get(_container);
+            if (
+              this.within(
+                rect.x,
+                rect.y,
+                rect.width,
+                rect.height,
+                gestureDetail.currentX,
+                gestureDetail.currentY
+              )
+            ) {
+              container = _container;
+              const children = Array.from(container.children) as HTMLElement[];
+              for (let child of children) {
+                if(this.dataCacheMap.has(child)){
+                  const {rect,index} = this.dataCacheMap.get(child);
+                  if (
+                    this.within(
+                      rect.x,
+                      rect.y,
+                      rect.width,
+                      rect.height,
+                      gestureDetail.currentX,
+                      gestureDetail.currentY
+                    )
+                  ) {
+                    draggable = child;
+                    draggableRect = rect;
+                    break;
+                  }
+                }
+              }
+              break;
+            }
+          }
 
           if (draggable) {
-            const container = draggable.parentElement;
-
             gestureDetail.data = {
               draggable,
               container,
@@ -269,6 +331,64 @@ export class Reorder extends LitElement {
               })
             ) {
               started = true;
+              // calc drggable trigger point by origin
+
+              let triggerOffsetX = 0;
+              let triggerOffsetY = 0;
+              if (this.draggableOrigin !== "current") {
+                const { startX, startY } = gestureDetail;
+                const { left, top, width, height } = draggableRect;
+                switch (this.draggableOrigin) {
+                  case "center-center":
+                    triggerOffsetX = width / 2 + left;
+                    triggerOffsetY = height / 2 + top;
+                    break;
+                  case "center-left":
+                    triggerOffsetX = left;
+                    triggerOffsetY = height / 2 + top;
+                    break;
+                  case "center-right":
+                    triggerOffsetX = width + left;
+                    triggerOffsetY = height / 2 + top;
+                    break;
+
+                  case "top-center":
+                    triggerOffsetX = width / 2 + left;
+                    triggerOffsetY = top;
+                    break;
+
+                  case "top-left":
+                    triggerOffsetX = left;
+                    triggerOffsetY = top;
+                    break;
+
+                  case "top-right":
+                    triggerOffsetX = width + left;
+                    triggerOffsetY = top;
+                    break;
+
+                  case "bottom-center":
+                    triggerOffsetX = width / 2 + left;
+                    triggerOffsetY = height + top;
+                    break;
+
+                  case "bottom-left":
+                    triggerOffsetX = left;
+                    triggerOffsetY = height + top;
+                    break;
+
+                  case "bottom-right":
+                    triggerOffsetX = width + left;
+                    triggerOffsetY = height + top;
+                    break;
+                }
+
+                triggerOffsetX -= startX;
+                triggerOffsetY -= startY;
+              }
+
+              gestureDetail.data.triggerOffsetX = triggerOffsetX;
+              gestureDetail.data.triggerOffsetY = triggerOffsetY;
 
               this.dispatchEvent(
                 new CustomEvent<StartEventDetail>("onStart", {
@@ -300,6 +420,7 @@ export class Reorder extends LitElement {
           );
           this.reorder(gestureDetail);
         }
+        this.gestureDetail = gestureDetail;
       },
       onEnd,
       notCaptured: (ev) => {

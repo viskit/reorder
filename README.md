@@ -23,7 +23,7 @@ default [this]
 ### triggerPoint = "center-center"
 
 ```ts
-type TriggerPoint = "top-left" |
+type DraggableOrigin = "top-left" |
                     "top-center" |
                     "top-right" |
                     "center-left" |
@@ -31,7 +31,7 @@ type TriggerPoint = "top-left" |
                     "center-right" |
                     "bottom-left" |
                     "bottom-center" |
-                    "bottom-right" |
+                    "bottom-right" 
 ```
 
 ### canStart

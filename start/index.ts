@@ -1,2 +1,2 @@
-import "../src";
-import "./scroll-reorder-demo";
+// import "../src";
+import "./demo";
