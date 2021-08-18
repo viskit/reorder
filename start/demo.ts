@@ -185,12 +185,13 @@ export class Demo extends LitElement {
   onDrop(ev: onDropEvent) {
     ev.detail.data.dragEl.remove();
     ev.detail.data.draggable.style.opacity = "1";
-    if (ev.detail.data.hoverContainer) {
-      clear(ev.detail.data.hoverContainer.children);
+
+    ev.detail.data.hoverContainer && clear(ev.detail.data.hoverContainer.children);
+    ev.detail.data.container && clear(ev.detail.data.container.children);
+
       if (ev.detail.data.draggable !== ev.detail.data.hoverable) {
         ev.detail.complete(true, ev.detail.data.after);
       }
-    }
   }
 
   render() {
