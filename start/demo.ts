@@ -1,10 +1,5 @@
 import { LitElement, html, property, state, css } from "lit-element";
-import {
-  onStartEvent,
-  onDragEvent,
-  onDropEvent,
-  onReorderEvent,
-} from "../src/index";
+import { StartEvent, DropEvent, ReorderEvent, DragEvent } from "../src/index";
 import "../src/index";
 import clone from "clone-element";
 
@@ -45,9 +40,8 @@ export class Demo extends LitElement {
     `;
   }
 
-  onStart(ev: onStartEvent) {
+  onStart({draggable,data}: StartEvent) {
     // clone
-    const draggable = ev.detail.draggable;
     const dragEl = clone(draggable) as HTMLElement;
     const { left, top, width, height } = draggable.getBoundingClientRect();
     dragEl.style.position = "absolute";
@@ -60,33 +54,32 @@ export class Demo extends LitElement {
     dragEl.classList.add("draggable");
 
     // dragEl.style.transform = `translateY(${}px)`;
-    ev.detail.data.dragEl = dragEl;
+    data.dragEl = dragEl;
 
     document.body.appendChild(dragEl);
 
     draggable.style.opacity = "0";
   }
 
-  onDrag(ev: onDragEvent) {
-    ev.detail.data.dragEl.style.transform = `translateY(${ev.detail.deltaY}px)`;
+  onDrag({data,deltaY}: DragEvent) {
+    data.dragEl.style.transform = `translateY(${deltaY}px)`;
   }
 
-  onReorder(ev: onReorderEvent) {
-    const prevHoverContainer = ev.detail.data.hoverContainer as HTMLElement;
+  onReorder({data,
+    y,
+    container,
+    hoverIndex,
+    hoverable,
+    hoverContainer,
+    draggable,
+    draggableIndex,
+    draggableRect,
+    hoverableRect,
+  }: ReorderEvent) {
+    const prevHoverContainer = data.hoverContainer as HTMLElement;
 
     // clear prev
 
-    const {
-      y,
-      container,
-      hoverIndex,
-      hoverable,
-      hoverContainer,
-      draggable,
-      draggableIndex,
-      draggableRect,
-      hoverableRect,
-    } = ev.detail;
 
     let index = hoverIndex;
 
@@ -101,9 +94,9 @@ export class Demo extends LitElement {
       } else if (hoverIndex < draggableIndex) {
         if (y > hoverableRect.top + hoverableRect.height / 2) {
           ++index;
-          ev.detail.data.after = true;
+          data.after = true;
         } else {
-          ev.detail.data.after = false;
+          data.after = false;
         }
         if (index === draggableIndex) {
           clear(hoverContainer.children);
@@ -122,9 +115,9 @@ export class Demo extends LitElement {
       } else {
         if (y < hoverableRect.top + hoverableRect.height / 2) {
           --index;
-          ev.detail.data.after = false;
+          data.after = false;
         } else {
-          ev.detail.data.after = true;
+          data.after = true;
         }
 
         if (index === draggableIndex) {
@@ -148,9 +141,9 @@ export class Demo extends LitElement {
 
       if (y > hoverableRect.top + hoverableRect.height / 2) {
         ++index;
-        ev.detail.data.after = true;
+        data.after = true;
       } else {
-        ev.detail.data.after = false;
+        data.after = false;
       }
       const children = Array.from(hoverContainer.children) as HTMLElement[];
       for (let i = 0, len = children.length; i < len; i++) {
@@ -168,9 +161,10 @@ export class Demo extends LitElement {
           children[i].classList.add("transform");
 
         if (
-          ( fromTop && hoverIndex === 0 && !ev.detail.data.after) ||
-          (!fromTop && hoverIndex === hoverContainer.children.length - 1 &&
-            ev.detail.data.after)
+          (fromTop && hoverIndex === 0 && !data.after) ||
+          (!fromTop &&
+            hoverIndex === hoverContainer.children.length - 1 &&
+            data.after)
         ) {
           y = y / 2;
         }
@@ -178,29 +172,30 @@ export class Demo extends LitElement {
       }
     }
 
-    ev.detail.data.hoverContainer = hoverContainer;
-    ev.detail.data.dropIndex = index;
+    data.hoverContainer = hoverContainer;
+    data.dropIndex = index;
   }
 
-  onDrop(ev: onDropEvent) {
-    ev.detail.data.dragEl.remove();
-    ev.detail.data.draggable.style.opacity = "1";
+  onDrop({data,complete}: DropEvent) {
+    data.dragEl.remove();
+    data.draggable.style.opacity = "1";
 
-    ev.detail.data.hoverContainer && clear(ev.detail.data.hoverContainer.children);
-    ev.detail.data.container && clear(ev.detail.data.container.children);
+    data.hoverContainer &&
+      clear(data.hoverContainer.children);
+    data.container && clear(data.container.children);
 
-      if (ev.detail.data.draggable !== ev.detail.data.hoverable) {
-        ev.detail.complete(true, ev.detail.data.after);
-      }
+    if (data.draggable !== data.hoverable) {
+      complete(data.after);
+    }
   }
 
   render() {
     return html`
       <viskit-reorder
-        @onStart=${this.onStart}
-        @onDrag=${this.onDrag}
-        @onReorder=${this.onReorder}
-        @onDrop=${this.onDrop}
+        @viskit-start=${this.onStart}
+        @viskit-drag=${this.onDrag}
+        @viskit-reorder=${this.onReorder}
+        @viskit-drop=${this.onDrop}
         .containerSelectors=${["#c1", "#c2"]}
       >
         <div id="c1">

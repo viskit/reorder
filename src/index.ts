@@ -22,14 +22,51 @@ type DataCacheMap = Map<
   }
 >;
 
-type StartEventDetail = GestureDetail & {
+export class StartEvent extends Event implements GestureDetail {
+  constructor(
+    detail: GestureDetail,
+    public draggable: HTMLElement,
+    public container: HTMLElement,
+    type = "viskit-start"
+  ) {
+    super(type);
+    for (let k in detail) {
+      if(k !== "type"){
+        this[k] = detail[k];
+      }
+    };
+    if (!detail.data) detail.data = {};
+  }
+
+  startX: number;
+  startY: number;
+  startTime: number;
+  currentX: number;
+  currentY: number;
+  velocityX: number;
+  velocityY: number;
+  deltaX: number;
+  deltaY: number;
+  currentTime: number;
+  event: UIEvent;
+  data: any;
+}
+
+export class DragEvent extends StartEvent {
+  constructor(
+    detail: GestureDetail,
+    public draggable: HTMLElement,
+    public container: HTMLElement
+  ) {
+    super(detail, draggable, container, "viskit-drag");
+  }
+}
+
+export type ReorderEventArgs = {
   draggable: HTMLElement;
   container: HTMLElement;
-};
 
-type DragEventDetail = StartEventDetail;
-
-type ReorderEventDetail = StartEventDetail & {
+  gestureDetail: GestureDetail;
   hoverable: HTMLElement;
   hoverIndex: number;
   hoverContainer: HTMLElement;
@@ -38,22 +75,56 @@ type ReorderEventDetail = StartEventDetail & {
   hoverableRect: DOMRect;
   draggableRect: DOMRect;
 
-  // under draggable origin point
   x: number;
   y: number;
 };
 
-type DropEventDetail = ReorderEventDetail & {
-  complete: (bool?: boolean, after?: boolean) => void;
-};
+export class ReorderEvent extends StartEvent {
+  constructor(
+    {
+      draggable,
+      container,
+      gestureDetail,
+      hoverContainer,
+      hoverIndex,
+      hoverable,
+      hoverableRect,
+      draggableRect,
+      draggableIndex,
+      x,
+      y,
+    }: ReorderEventArgs,
+    type = "viskit-reorder"
+  ) {
+    super(gestureDetail, draggable, container, type);
+    this.hoverable = hoverable;
+    this.hoverIndex = hoverIndex;
+    this.hoverContainer = hoverContainer;
 
-export type onStartEvent = CustomEvent<StartEventDetail>;
+    this.draggableIndex = draggableIndex;
+    this.hoverableRect = hoverableRect;
+    this.draggableRect = draggableRect;
 
-export type onDragEvent = CustomEvent<StartEventDetail>;
+    this.x = x;
+    this.y = y;
+  }
+  hoverable: HTMLElement;
+  hoverIndex: number;
+  hoverContainer: HTMLElement;
 
-export type onReorderEvent = CustomEvent<ReorderEventDetail>;
+  draggableIndex: number;
+  hoverableRect: DOMRect;
+  draggableRect: DOMRect;
 
-export type onDropEvent = CustomEvent<DropEventDetail>;
+  x: number;
+  y: number;
+}
+
+export class DropEvent extends Event {
+  constructor(public complete: (after?: boolean) => void, public data: any = {}) {
+    super("viskit-drop");
+  }
+}
 
 export class Reorder extends LitElement {
   public canStart(
@@ -126,20 +197,18 @@ export class Reorder extends LitElement {
                 y: triggerY,
               };
               this.dispatchEvent(
-                new CustomEvent<ReorderEventDetail>("onReorder", {
-                  detail: {
-                    ...gestureDetail,
-                    hoverable,
-                    hoverContainer,
-                    hoverIndex,
-                    draggableIndex,
-                    draggable: gestureDetail.data.draggable,
-                    container: gestureDetail.data.container,
-                    draggableRect,
-                    hoverableRect: this.dataCacheMap.get(hoverable).rect,
-                    x: triggerX,
-                    y: triggerY,
-                  },
+                new ReorderEvent({
+                  gestureDetail,
+                  hoverable,
+                  hoverContainer,
+                  hoverIndex,
+                  draggableIndex,
+                  draggable: gestureDetail.data.draggable,
+                  container: gestureDetail.data.container,
+                  draggableRect,
+                  hoverableRect: this.dataCacheMap.get(hoverable).rect,
+                  x: triggerX,
+                  y: triggerY,
                 })
               );
 
@@ -225,12 +294,6 @@ export class Reorder extends LitElement {
     }
   }
 
-  private _lastHoverData: {
-    hoverEl: HTMLElement;
-    hoverContainer: HTMLElement;
-    hoverIndex: number;
-  };
-
   private offsetX = 0;
   private offsetY = 0;
 
@@ -258,29 +321,21 @@ export class Reorder extends LitElement {
         clearTimeout(ct);
 
         this.dispatchEvent(
-          new CustomEvent<DropEventDetail>("onDrop", {
-            detail: {
-              ...gestureDetail,
-              complete: (bool = false, after = true) => {
-                const selectedItemEl = gestureDetail.data
-                  .draggable as HTMLElement;
+          new DropEvent((after = true) => {
+            const selectedItemEl = gestureDetail.data.draggable as HTMLElement;
 
-                if (selectedItemEl) {
-                  if (bool) {
-                    const { hoverContainer, hoverable, hoverIndex } =
-                      gestureDetail.data;
-                    if (hoverable) {
-                      hoverable.insertAdjacentElement(
-                        after ? "afterend" : "beforebegin",
-                        selectedItemEl
-                      );
-                      this.mutation();
-                    }
-                  }
+            if (selectedItemEl) {
+                const { hoverContainer, hoverable, hoverIndex } =
+                  gestureDetail.data;
+                if (hoverable) {
+                  hoverable.insertAdjacentElement(
+                    after ? "afterend" : "beforebegin",
+                    selectedItemEl
+                  );
+                  this.mutation();
                 }
-              },
-            } as any,
-          })
+            }
+          },gestureDetail.data)
         );
       }
     };
@@ -409,13 +464,7 @@ export class Reorder extends LitElement {
               gestureDetail.data.triggerOffsetY = triggerOffsetY;
 
               this.dispatchEvent(
-                new CustomEvent<StartEventDetail>("onStart", {
-                  detail: {
-                    ...gestureDetail,
-                    draggable,
-                    container,
-                  },
-                })
+                new StartEvent(gestureDetail, draggable, container)
               );
             }
           }
@@ -428,13 +477,11 @@ export class Reorder extends LitElement {
         clearTimeout(ct);
         if (started) {
           this.dispatchEvent(
-            new CustomEvent<DragEventDetail>("onDrag", {
-              detail: {
-                ...gestureDetail,
-                draggable: gestureDetail.data.draggable,
-                container: gestureDetail.data.container,
-              },
-            })
+            new DragEvent(
+              gestureDetail,
+              gestureDetail.data.draggable,
+              gestureDetail.data.container
+            )
           );
           this.reorder(gestureDetail);
         }

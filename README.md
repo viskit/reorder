@@ -1,108 +1,12 @@
-# viskit-reorder
+# \<viskit-reorder\>
 
-reorder web component
-
-# API
-
-### mutation()
-
-will call `calcCacheData()` and generate `containers`
-
-### calcCacheData()
-
-### enable = true
-
-### longPressTimeout = 300
-
-### containerSelectors? : string[]
-
-### containers: HTMLElement[]
-
-default [this]
-
-### triggerPoint = "center-center"
-
-```ts
-type DraggableOrigin = "top-left" |
-                    "top-center" |
-                    "top-right" |
-                    "center-left" |
-                    "center-center" |
-                    "center-right" |
-                    "bottom-left" |
-                    "bottom-center" |
-                    "bottom-right" 
-```
-
-### canStart
-
-```ts
-canStart(args:  GestureDetail & { draggable: HTMLElement; container: HTMLElement; }): boolean;
-```
-
-### onStart
-
-```ts
-
-onStart({
-    detail: GestureDetail &
-    { data: { draggable: HTMLElement; container: HTMLElement; } }
-});
-```
-
-### onDrag
-
-```ts
-onDrag({
-    detail: GestureDetail &
-    { data: {
-        draggable: HTMLElement;
-        container: HTMLElement;
-    } }
-});
-```
-
-### onReorder
-
-```ts
-onReorder({
-    detail: GestureDetail &
-    { data: {
-            draggable: HTMLElement;
-            container: HTMLElement;
-            hoverable: HTMLElement;
-            hoverIndex: number;
-            hoverContainer: HTMLElement;
-    } }
-});
-```
-
-### onDrop
-
-```ts
-onDrop({
-    detail: GestureDetail &
-    { data: {
-            draggable: HTMLElement;
-            container: HTMLElement;
-            hoverable: HTMLElement;
-            hoverIndex: number;
-            hoverContainer: HTMLElement;
-
-            complete:(bool:boolean)=>void;
-    } }
-});
-```
-
-![](https://raw.githubusercontent.com/viskit/viskit-reorder/main/show.gif)
+`<viskit-reorder>` web component, provides event data but no UI.
 
 # Install
 
     npm i @viskit/reorder
 
 # Use
-
-See sample online [https://codepen.io/liangzeng/pen/mdRKbOE](https://codepen.io/liangzeng/pen/mdRKbOE)
 
 ```html
 <viskit-reorder>
@@ -111,7 +15,77 @@ See sample online [https://codepen.io/liangzeng/pen/mdRKbOE](https://codepen.io/
   <div>item 3</div>
   <div>item 4</div>
 </viskit-reorder>
+
+<script>
+  const reorder = document.querySelector("viskit-reorder");
+  reorder.addEventListener("viskit-start", (event) => {});
+  reorder.addEventListener("viskit-drag", (event) => {});
+  reorder.addEventListener("viskit-reorder", (event) => {});
+  reorder.addEventListener("viskit-drop", (event) => {});
+</script>
 ```
+
+# API
+
+### @viskit-start as StartEvent 
+
+long press trigger viskit-start event.
+
+##### Properties
++ `type`:string = "viskit-start"
++ `draggable`: HTMLElement 
++ `container`: HTMLElement  drggable's parent element.
+
+##### Properties inherited from `GestureDetail`  
+see https://ionicframework.com/docs/utilities/gestures#gesturedetail
++ `startX`: number
++ `startY`: number
++ `startTime`: number
++ `currentX`: number
++ `currentY`: number
++ `velocityX`: number
++ `velocityY`: number
++ `deltaX`: number
++ `deltaY`: number
++ `currentTime`: number
++ `event`: UIEvent
++ `data`: any
+
+### @viskit-drag : DragEvent 
+
+> Extends StartEvent.
+
+Move to trigger viskit-drag event , event handler don't add time-consuming code because triggered at a high frequency. 
+
+##### Properties
++ `type` = "viskit-drag"
+
+### @viskit-reorder : ReorderEvent
+
+> Extends StartEvent.
+
+Short pause in effective hoverable to trigger viskit-reorder event.
+
+You can add time-consuming code because triggered at a low frequency.
+
+##### Properties
++ `hoverable`: HTMLElement - draggable element hovering over it. 
++ `hoverIndex`: number - index by container element (see hoverContainer property).
++ `hoverContainer`: HTMLElement - hoverable.parentElement.
++ `draggableIndex`: number - index by container element.
++ `hoverableRect`: DOMRect - hoverable.getBoundingClientrect()
++ `draggableRect`: - draggable.getBoundingClientrect()
++ `x`: number & `y`: number - trigger point.
+
+### @viskit-drop : DropEvent
+
+up to trigger viskit-drop event.
+
+##### Properties
++ complete(after: boolean = true) => void
+    + reorder doms
+    + after - moving draggable element to hoverable element by after. true is after , false is before. (default true)
+
 
 # LICENSE
 
