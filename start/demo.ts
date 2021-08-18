@@ -12,11 +12,11 @@ const clear = (children: HTMLCollection) => {
   const childrens = Array.from(children) as HTMLElement[];
   childrens.forEach((c) => {
     c.style.transform = "";
+    c.classList.remove("transform");
   });
 };
 
 export class Demo extends LitElement {
-
   static get styles() {
     return css`
       #c1,
@@ -74,8 +74,6 @@ export class Demo extends LitElement {
   onReorder(ev: onReorderEvent) {
     const prevHoverContainer = ev.detail.data.hoverContainer as HTMLElement;
 
-
-
     // clear prev
 
     const {
@@ -90,9 +88,7 @@ export class Demo extends LitElement {
       hoverableRect,
     } = ev.detail;
 
-
     let index = hoverIndex;
-
 
     // clear previous cntainer's children transform
     if (prevHoverContainer !== hoverContainer && prevHoverContainer) {
@@ -105,13 +101,17 @@ export class Demo extends LitElement {
       } else if (hoverIndex < draggableIndex) {
         if (y > hoverableRect.top + hoverableRect.height / 2) {
           ++index;
+          ev.detail.data.after = true;
+        } else {
+          ev.detail.data.after = false;
         }
         if (index === draggableIndex) {
           clear(hoverContainer.children);
         } else {
           const children = Array.from(hoverContainer.children) as HTMLElement[];
           for (let i = 0, len = children.length; i < len; i++) {
-            children[i].classList.contains("transform") || children[i].classList.add("transform");
+            children[i].classList.contains("transform") ||
+              children[i].classList.add("transform");
             let y = 0;
             if (i >= index && i < draggableIndex) {
               y = draggableRect.height;
@@ -122,6 +122,9 @@ export class Demo extends LitElement {
       } else {
         if (y < hoverableRect.top + hoverableRect.height / 2) {
           --index;
+          ev.detail.data.after = false;
+        } else {
+          ev.detail.data.after = true;
         }
 
         if (index === draggableIndex) {
@@ -133,15 +136,21 @@ export class Demo extends LitElement {
             if (i > draggableIndex && i <= index) {
               y = -draggableRect.height;
             }
-            children[i].classList.contains("transform") || children[i].classList.add("transform");
+            children[i].classList.contains("transform") ||
+              children[i].classList.add("transform");
 
             children[i].style.transform = `translateY(${y}px)`;
           }
         }
       }
     } else {
+      const fromTop = draggableRect.top < hoverableRect.top;
+
       if (y > hoverableRect.top + hoverableRect.height / 2) {
         ++index;
+        ev.detail.data.after = true;
+      } else {
+        ev.detail.data.after = false;
       }
       const children = Array.from(hoverContainer.children) as HTMLElement[];
       for (let i = 0, len = children.length; i < len; i++) {
@@ -155,7 +164,16 @@ export class Demo extends LitElement {
           }
         }
 
-        children[i].classList.contains("transform") || children[i].classList.add("transform");
+        children[i].classList.contains("transform") ||
+          children[i].classList.add("transform");
+
+        if (
+          ( fromTop && hoverIndex === 0 && !ev.detail.data.after) ||
+          (!fromTop && hoverIndex === hoverContainer.children.length - 1 &&
+            ev.detail.data.after)
+        ) {
+          y = y / 2;
+        }
         children[i].style.transform = `translateY(${y}px)`;
       }
     }
@@ -165,17 +183,25 @@ export class Demo extends LitElement {
   }
 
   onDrop(ev: onDropEvent) {
-
-    ev.detail.complete(true,
-      ev.detail.data.dropIndex > ev.detail.hoverIndex
-    );
-    clear(ev.detail.data.hoverContainer.children);
+    ev.detail.data.dragEl.remove();
+    ev.detail.data.draggable.style.opacity = "1";
+    if (ev.detail.data.hoverContainer) {
+      clear(ev.detail.data.hoverContainer.children);
+      if (ev.detail.data.draggable !== ev.detail.data.hoverable) {
+        ev.detail.complete(true, ev.detail.data.after);
+      }
+    }
   }
 
   render() {
     return html`
-      <viskit-reorder @onStart=${this.onStart} @onDrag=${this.onDrag} @onReorder=${this.onReorder} @onDrop=${this.onDrop}
-        .containerSelectors=${["#c1", "#c2"]}>
+      <viskit-reorder
+        @onStart=${this.onStart}
+        @onDrag=${this.onDrag}
+        @onReorder=${this.onReorder}
+        @onDrop=${this.onDrop}
+        .containerSelectors=${["#c1", "#c2"]}
+      >
         <div id="c1">
           <div id="a" class="item">a</div>
           <div id="b" class="item">b</div>

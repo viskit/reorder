@@ -3,7 +3,7 @@ import { createGesture, Gesture, GestureDetail } from "@ionic/core";
 import { debounce } from "lodash";
 
 export type DraggableOrigin =
-  "current"
+  | "current"
   | "top-left"
   | "top-center"
   | "top-right"
@@ -93,7 +93,8 @@ export class Reorder extends LitElement {
     const triggerY = currentY + triggerOffsetY + this.offsetY;
 
     for (let hoverContainer of this.containers) {
-      const { x, y, width, height } = this.dataCacheMap.get(hoverContainer).rect;
+      const { x, y, width, height } =
+        this.dataCacheMap.get(hoverContainer).rect;
       if (this.within(x, y, width, height, triggerX, triggerY)) {
         const childs = Array.from(hoverContainer.children);
         for (let i = 0, len = childs.length; i < len; i++) {
@@ -105,10 +106,12 @@ export class Reorder extends LitElement {
               index,
             } = data;
             if (this.within(x, y, width, height, triggerX, triggerY)) {
-
               const hoverable = child as HTMLElement;
               const hoverIndex = index;
-              const { index: draggableIndex, rect: draggableRect } = this.dataCacheMap.get(gestureDetail.data.draggable as HTMLElement);
+              const { index: draggableIndex, rect: draggableRect } =
+                this.dataCacheMap.get(
+                  gestureDetail.data.draggable as HTMLElement
+                );
               gestureDetail.data = {
                 ...gestureDetail.data,
                 hoverable,
@@ -121,7 +124,7 @@ export class Reorder extends LitElement {
                 hoverableRect: this.dataCacheMap.get(hoverable).rect,
                 x: triggerX,
                 y: triggerY,
-              }
+              };
               this.dispatchEvent(
                 new CustomEvent<ReorderEventDetail>("onReorder", {
                   detail: {
@@ -214,7 +217,10 @@ export class Reorder extends LitElement {
       const childs = Array.from(container.children);
       for (let i = 0, len = childs.length; i < len; i++) {
         const child = childs[i] as HTMLElement;
-        this.dataCacheMap.set(child, { rect: child.getBoundingClientRect(), index: i });
+        this.dataCacheMap.set(child, {
+          rect: child.getBoundingClientRect(),
+          index: i,
+        });
       }
     }
   }
@@ -251,7 +257,6 @@ export class Reorder extends LitElement {
         this.gestureDetail = null;
         clearTimeout(ct);
 
-        
         this.dispatchEvent(
           new CustomEvent<DropEventDetail>("onDrop", {
             detail: {
@@ -266,10 +271,10 @@ export class Reorder extends LitElement {
                       gestureDetail.data;
                     if (hoverable) {
                       hoverable.insertAdjacentElement(
-                        after ? "afterend"
-                          : "beforebegin",
+                        after ? "afterend" : "beforebegin",
                         selectedItemEl
                       );
+                      this.mutation();
                     }
                   }
                 }
