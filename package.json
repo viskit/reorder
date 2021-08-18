@@ -22,13 +22,12 @@
     "@4tw/cypress-drag-drop": "^1.8.0",
     "@types/lodash": "^4.14.172",
     "@viskit/webpack-configs": "^0.0.1",
-    "cypress": "8.2.0",
-    "clone-element": "^0.1.0"
-
+    "clone-element": "^0.1.0",
+    "cypress": "8.2.0"
   },
   "dependencies": {
     "@ionic/core": "^5.6.13",
-    "lit-element": "^2.5.1",
+    "lit": "^2.0.0-rc.2",
     "lodash": "^4.17.21"
   }
 }

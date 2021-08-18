@@ -1,4 +1,5 @@
-import { html, LitElement, property } from "lit-element";
+import { LitElement } from "lit";
+import { state, property } from "lit/decorators.js";
 import { createGesture, Gesture, GestureDetail } from "@ionic/core";
 import { debounce } from "lodash";
 
@@ -31,10 +32,10 @@ export class StartEvent extends Event implements GestureDetail {
   ) {
     super(type);
     for (let k in detail) {
-      if(k !== "type"){
+      if (k !== "type") {
         this[k] = detail[k];
       }
-    };
+    }
     if (!detail.data) detail.data = {};
   }
 
@@ -121,7 +122,10 @@ export class ReorderEvent extends StartEvent {
 }
 
 export class DropEvent extends Event {
-  constructor(public complete: (after?: boolean) => void, public data: any = {}) {
+  constructor(
+    public complete: (after?: boolean) => void,
+    public data: any = {}
+  ) {
     super("viskit-drop");
   }
 }
@@ -325,17 +329,17 @@ export class Reorder extends LitElement {
             const selectedItemEl = gestureDetail.data.draggable as HTMLElement;
 
             if (selectedItemEl) {
-                const { hoverContainer, hoverable, hoverIndex } =
-                  gestureDetail.data;
-                if (hoverable) {
-                  hoverable.insertAdjacentElement(
-                    after ? "afterend" : "beforebegin",
-                    selectedItemEl
-                  );
-                  this.mutation();
-                }
+              const { hoverContainer, hoverable, hoverIndex } =
+                gestureDetail.data;
+              if (hoverable) {
+                hoverable.insertAdjacentElement(
+                  after ? "afterend" : "beforebegin",
+                  selectedItemEl
+                );
+                this.mutation();
+              }
             }
-          },gestureDetail.data)
+          }, gestureDetail.data)
         );
       }
     };

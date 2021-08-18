@@ -1,4 +1,5 @@
-import { LitElement, html, property, state, css } from "lit-element";
+import { LitElement, html, css } from "lit";
+import {property, state} from "lit/decorators";
 import { StartEvent, DropEvent, ReorderEvent, DragEvent } from "../src/index";
 import "../src/index";
 import clone from "clone-element";

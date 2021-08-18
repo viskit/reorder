@@ -85,7 +85,7 @@ up to trigger viskit-drop event.
 + complete(after: boolean = true) => void
     + reorder doms
     + after - moving draggable element to hoverable element by after. true is after , false is before. (default true)
-
++ data : any - Any data specified by the user. This can be set and read in any of the callbacks.
 
 # LICENSE
 
