@@ -1,55 +1,86 @@
-import { LitElement } from "lit-element";
+/// <reference types="lodash" />
+import { LitElement } from "lit";
 import { Gesture, GestureDetail } from "@ionic/core";
+export declare type DraggableOrigin = "current" | "top-left" | "top-center" | "top-right" | "center-left" | "center-center" | "center-right" | "bottom-left" | "bottom-center" | "bottom-right";
 declare type DataCacheMap = Map<HTMLElement, {
     rect: DOMRect;
-    index: number;
-    itemDataMap: Map<HTMLElement, {
-        rect: DOMRect;
-        index: number;
-    }>;
+    index?: number;
 }>;
-export declare type onStartEvent = CustomEvent<{
-    el: HTMLElement;
-    gestureDetail: GestureDetail;
+export declare class StartEvent extends Event implements GestureDetail {
+    draggable: HTMLElement;
     container: HTMLElement;
-    reorder: Reorder;
-}>;
-export declare type onDragEvent = CustomEvent<{
-    el: HTMLElement;
-    gestureDetail: GestureDetail;
+    constructor(detail: GestureDetail, draggable: HTMLElement, container: HTMLElement, type?: string);
+    startX: number;
+    startY: number;
+    startTime: number;
+    currentX: number;
+    currentY: number;
+    velocityX: number;
+    velocityY: number;
+    deltaX: number;
+    deltaY: number;
+    currentTime: number;
+    event: UIEvent;
+    data: any;
+}
+export declare class DragEvent extends StartEvent {
+    draggable: HTMLElement;
     container: HTMLElement;
-    reorder: Reorder;
-    hoverEl: HTMLElement;
-    hoverContainer: HTMLElement;
-    hoverIndex: number;
-}>;
-export declare type onDropEvent = CustomEvent<{
-    el: HTMLElement;
+    constructor(detail: GestureDetail, draggable: HTMLElement, container: HTMLElement);
+}
+export declare type ReorderEventArgs = {
+    draggable: HTMLElement;
+    container: HTMLElement;
     gestureDetail: GestureDetail;
-    complete: (bool: boolean) => void;
-    hoverEl: HTMLElement;
-    hoverContainer: HTMLElement;
+    hoverable: HTMLElement;
     hoverIndex: number;
-}>;
-declare const within: unique symbol;
+    hoverContainer: HTMLElement;
+    draggableIndex: number;
+    hoverableRect: DOMRect;
+    draggableRect: DOMRect;
+    x: number;
+    y: number;
+};
+export declare class ReorderEvent extends StartEvent {
+    constructor({ draggable, container, gestureDetail, hoverContainer, hoverIndex, hoverable, hoverableRect, draggableRect, draggableIndex, x, y, }: ReorderEventArgs, type?: string);
+    hoverable: HTMLElement;
+    hoverIndex: number;
+    hoverContainer: HTMLElement;
+    draggableIndex: number;
+    hoverableRect: DOMRect;
+    draggableRect: DOMRect;
+    x: number;
+    y: number;
+}
+export declare class DropEvent extends Event {
+    complete: (after?: boolean) => void;
+    data: any;
+    constructor(complete: (after?: boolean) => void, data?: any);
+}
 export declare class Reorder extends LitElement {
+    canStart(args: GestureDetail & {
+        draggable: HTMLElement;
+        container: HTMLElement;
+    }): boolean;
+    draggableOrigin: DraggableOrigin;
     dataCacheMap: DataCacheMap;
-    constructor();
     gesture: Gesture;
-    private selectedItemEl;
+    private gestureDetail;
     containers: HTMLElement[];
-    containerSelectors: string | string[];
     timeout: number;
-    draggableFilter(el: HTMLElement): boolean;
+    private reorder;
     direction: "x" | "y";
-    draggableOrigin: "center" | "pointer";
     hoverPosition(x: number, y: number, width: number, height: number, currentX: number, currentY: number): ["left" | "right", "top" | "bottom"];
-    complete(bool?: boolean): void;
-    [within](x: any, y: any, width: any, height: any, currentX: any, currentY: any): boolean;
-    updateContainers(): Promise<void>;
-    updated(map: Map<string, any>): void;
-    private _lastHoverData;
+    private within;
+    private calcCacheData;
+    private offsetX;
+    private offsetY;
+    mutation: import("lodash").DebouncedFunc<(offset?: {
+        x: number;
+        y: number;
+    }) => void>;
     firstUpdated(): void;
+    updated(): void;
     createRenderRoot(): this;
 }
 declare global {

@@ -1,6 +1,6 @@
 import { LitElement, html, css } from "lit";
-import {property, state} from "lit/decorators";
-import { StartEvent, DropEvent, ReorderEvent, DragEvent } from "../src/index";
+import {property, state,query,queryAll} from "lit/decorators.js";
+import { StartEvent, DropEvent, ReorderEvent, DragEvent, Reorder } from "../src/index";
 import "../src/index";
 import clone from "clone-element";
 
@@ -40,6 +40,13 @@ export class Demo extends LitElement {
       }
     `;
   }
+
+  @queryAll(".container")
+  containers: NodeList;
+
+  @query("viskit-reorder")
+  reorder:Reorder;
+
 
   onStart({draggable,data}: StartEvent) {
     // clone
@@ -197,21 +204,26 @@ export class Demo extends LitElement {
         @viskit-drag=${this.onDrag}
         @viskit-reorder=${this.onReorder}
         @viskit-drop=${this.onDrop}
-        .containerSelectors=${["#c1", "#c2"]}
+        
       >
-        <div id="c1">
+        <div id="c1" class="container">
           <div id="a" class="item">a</div>
           <div id="b" class="item">b</div>
           <div id="c" class="item">c</div>
           <div id="b2" class="item">b2</div>
           <div id="b3" class="item">b3</div>
         </div>
-        <div id="c2">
+        <div id="c2" class="container">
           <div id="d" class="item">d</div>
         </div>
       </viskit-reorder>
     `;
   }
+
+  firstUpdated(){
+    this.reorder.containers = Array.from(this.containers) as HTMLElement[];
+  }
+
 }
 
 window.customElements.define("zl-demo", Demo);
