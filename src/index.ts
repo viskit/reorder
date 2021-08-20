@@ -376,6 +376,7 @@ export class Reorder extends LitElement {
 
         if (draggable) {
           gestureDetail.data = {
+            ...gestureDetail.data,
             draggable,
             container,
           };
