@@ -1,6 +1,6 @@
 {
   "name": "@viskit/reorder",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "reorder web component",
   "main": "dist/index.js",
   "scripts": {
