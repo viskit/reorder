@@ -29,7 +29,7 @@
 
 ### @viskit-start as StartEvent 
 
-long press trigger viskit-start event.
+when `canStart()` is `true` and little touchmove, then trigger viskit-start event.
 
 ##### Properties
 + `type`:string = "viskit-start"
