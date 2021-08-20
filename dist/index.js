@@ -26,6 +26,7 @@ var __webpack_exports__ = {};
 __webpack_require__.d(__webpack_exports__, {
   "_t": () => (/* binding */ DragEvent),
   "AP": () => (/* binding */ DropEvent),
+  "w4": () => (/* binding */ EndEvent),
   "tm": () => (/* binding */ Reorder),
   "tO": () => (/* binding */ ReorderEvent),
   "T4": () => (/* binding */ StartEvent)
@@ -68,6 +69,13 @@ class DragEvent extends StartEvent {
         this.container = container;
     }
 }
+class EndEvent extends StartEvent {
+    constructor(detail, draggable, container) {
+        super(detail, draggable, container, "viskit-end");
+        this.draggable = draggable;
+        this.container = container;
+    }
+}
 class ReorderEvent extends StartEvent {
     constructor({ draggable, container, gestureDetail, hoverContainer, hoverIndex, hoverable, hoverableRect, draggableRect, draggableIndex, x, y, }, type = "viskit-reorder") {
         super(gestureDetail, draggable, container, type);
@@ -94,8 +102,6 @@ class Reorder extends external_lit_namespaceObject.LitElement {
         this.draggableOrigin = "center-center";
         this.dataCacheMap = null;
         this.containers = [this];
-        this.containerSelectors = "";
-        this.timeout = 500;
         this.reorder = (0,external_lodash_namespaceObject.debounce)((gestureDetail) => {
             let { currentX, currentY, data: { triggerOffsetX, triggerOffsetY, draggable }, } = gestureDetail;
             currentX += this.offsetX;
@@ -144,7 +150,6 @@ class Reorder extends external_lit_namespaceObject.LitElement {
         this.offsetX = 0;
         this.offsetY = 0;
         this.mutation = (0,external_lodash_namespaceObject.debounce)((offset) => {
-            this.updateContainers();
             if (offset) {
                 this.offsetX = offset.x;
                 this.offsetY = offset.y;
@@ -172,31 +177,6 @@ class Reorder extends external_lit_namespaceObject.LitElement {
             y <= currentY &&
             y + height >= currentY);
     }
-    updateContainers() {
-        this.containers = [];
-        if (this.containerSelectors) {
-            for (let selector of this.containerSelectors) {
-                const containerList = this.querySelectorAll(selector);
-                this.containers = [
-                    ...this.containers,
-                    ...Array.from(containerList),
-                ];
-            }
-            this.containers = this.containers.sort((ac, bc) => {
-                const { top: btop } = bc.getBoundingClientRect();
-                const { top: atop } = ac.getBoundingClientRect();
-                return atop - btop;
-            });
-        }
-        else {
-            this.containers = [this];
-        }
-    }
-    updated(map) {
-        if (map.has("containerSelectors")) {
-            this.updateContainers();
-        }
-    }
     calcCacheData() {
         this.dataCacheMap = new Map();
         for (let index = 0, len = this.containers.length; index < len; index++) {
@@ -216,12 +196,9 @@ class Reorder extends external_lit_namespaceObject.LitElement {
         }
     }
     firstUpdated() {
-        let started = false, ct;
+        let started = false;
         const onEnd = (gestureDetail) => {
             if (started) {
-                started = false;
-                this.gestureDetail = null;
-                clearTimeout(ct);
                 this.dispatchEvent(new DropEvent((after = true) => {
                     const selectedItemEl = gestureDetail.data.draggable;
                     if (selectedItemEl) {
@@ -233,112 +210,106 @@ class Reorder extends external_lit_namespaceObject.LitElement {
                     }
                 }, gestureDetail.data));
             }
+            else {
+                this.dispatchEvent(new EndEvent(gestureDetail, gestureDetail.data.draggable, gestureDetail.data.container));
+            }
         };
         this.gesture = (0,core_namespaceObject.createGesture)({
             el: this,
             direction: "y",
             gestureName: "pzl-reorder-list",
             disableScroll: false,
-            canStart: (gestureDetail) => {
-                ct = setTimeout(() => {
-                    // generate DataCacheMap by containers
-                    this.calcCacheData();
-                    let draggable, container;
-                    let draggableRect;
-                    for (let _container of this.containers) {
-                        const { rect } = this.dataCacheMap.get(_container);
-                        if (this.within(rect.x, rect.y, rect.width, rect.height, gestureDetail.currentX, gestureDetail.currentY)) {
-                            container = _container;
-                            const children = Array.from(container.children);
-                            for (let child of children) {
-                                if (this.dataCacheMap.has(child)) {
-                                    const { rect, index } = this.dataCacheMap.get(child);
-                                    if (this.within(rect.x, rect.y, rect.width, rect.height, gestureDetail.currentX, gestureDetail.currentY)) {
-                                        draggable = child;
-                                        draggableRect = rect;
-                                        break;
-                                    }
+            canStart: (ev) => this.canStart(ev),
+            onStart: (gestureDetail) => {
+                started = false;
+                this.calcCacheData();
+                let draggable, container;
+                let draggableRect;
+                for (let _container of this.containers) {
+                    const { rect } = this.dataCacheMap.get(_container);
+                    if (this.within(rect.x, rect.y, rect.width, rect.height, gestureDetail.currentX, gestureDetail.currentY)) {
+                        container = _container;
+                        const children = Array.from(container.children);
+                        for (let child of children) {
+                            if (this.dataCacheMap.has(child)) {
+                                const { rect, index } = this.dataCacheMap.get(child);
+                                if (this.within(rect.x, rect.y, rect.width, rect.height, gestureDetail.currentX, gestureDetail.currentY)) {
+                                    draggable = child;
+                                    draggableRect = rect;
+                                    break;
                                 }
                             }
-                            break;
                         }
+                        break;
                     }
-                    if (draggable) {
-                        gestureDetail.data = {
-                            draggable,
-                            container,
-                        };
-                        if (this.canStart(Object.assign(Object.assign({}, gestureDetail), { draggable,
-                            container }))) {
-                            started = true;
-                            // calc drggable trigger point by origin
-                            let triggerOffsetX = 0;
-                            let triggerOffsetY = 0;
-                            if (this.draggableOrigin !== "current") {
-                                const { startX, startY } = gestureDetail;
-                                const { left, top, width, height } = draggableRect;
-                                switch (this.draggableOrigin) {
-                                    case "center-center":
-                                        triggerOffsetX = width / 2 + left;
-                                        triggerOffsetY = height / 2 + top;
-                                        break;
-                                    case "center-left":
-                                        triggerOffsetX = left;
-                                        triggerOffsetY = height / 2 + top;
-                                        break;
-                                    case "center-right":
-                                        triggerOffsetX = width + left;
-                                        triggerOffsetY = height / 2 + top;
-                                        break;
-                                    case "top-center":
-                                        triggerOffsetX = width / 2 + left;
-                                        triggerOffsetY = top;
-                                        break;
-                                    case "top-left":
-                                        triggerOffsetX = left;
-                                        triggerOffsetY = top;
-                                        break;
-                                    case "top-right":
-                                        triggerOffsetX = width + left;
-                                        triggerOffsetY = top;
-                                        break;
-                                    case "bottom-center":
-                                        triggerOffsetX = width / 2 + left;
-                                        triggerOffsetY = height + top;
-                                        break;
-                                    case "bottom-left":
-                                        triggerOffsetX = left;
-                                        triggerOffsetY = height + top;
-                                        break;
-                                    case "bottom-right":
-                                        triggerOffsetX = width + left;
-                                        triggerOffsetY = height + top;
-                                        break;
-                                }
-                                triggerOffsetX -= startX;
-                                triggerOffsetY -= startY;
-                            }
-                            gestureDetail.data.triggerOffsetX = triggerOffsetX;
-                            gestureDetail.data.triggerOffsetY = triggerOffsetY;
-                            this.dispatchEvent(new StartEvent(gestureDetail, draggable, container));
+                }
+                if (draggable) {
+                    gestureDetail.data = {
+                        draggable,
+                        container,
+                    };
+                    // calc drggable trigger point by origin
+                    let triggerOffsetX = 0;
+                    let triggerOffsetY = 0;
+                    if (this.draggableOrigin !== "current") {
+                        const { startX, startY } = gestureDetail;
+                        const { left, top, width, height } = draggableRect;
+                        switch (this.draggableOrigin) {
+                            case "center-center":
+                                triggerOffsetX = width / 2 + left;
+                                triggerOffsetY = height / 2 + top;
+                                break;
+                            case "center-left":
+                                triggerOffsetX = left;
+                                triggerOffsetY = height / 2 + top;
+                                break;
+                            case "center-right":
+                                triggerOffsetX = width + left;
+                                triggerOffsetY = height / 2 + top;
+                                break;
+                            case "top-center":
+                                triggerOffsetX = width / 2 + left;
+                                triggerOffsetY = top;
+                                break;
+                            case "top-left":
+                                triggerOffsetX = left;
+                                triggerOffsetY = top;
+                                break;
+                            case "top-right":
+                                triggerOffsetX = width + left;
+                                triggerOffsetY = top;
+                                break;
+                            case "bottom-center":
+                                triggerOffsetX = width / 2 + left;
+                                triggerOffsetY = height + top;
+                                break;
+                            case "bottom-left":
+                                triggerOffsetX = left;
+                                triggerOffsetY = height + top;
+                                break;
+                            case "bottom-right":
+                                triggerOffsetX = width + left;
+                                triggerOffsetY = height + top;
+                                break;
                         }
+                        triggerOffsetX -= startX;
+                        triggerOffsetY -= startY;
+                        gestureDetail.data.triggerOffsetX = triggerOffsetX;
+                        gestureDetail.data.triggerOffsetY = triggerOffsetY;
+                        this.dispatchEvent(new StartEvent(gestureDetail, draggable, container));
+                        started = true;
                     }
-                }, this.timeout);
-                return true;
+                }
             },
             onMove: (gestureDetail) => {
-                clearTimeout(ct);
                 if (started) {
                     this.dispatchEvent(new DragEvent(gestureDetail, gestureDetail.data.draggable, gestureDetail.data.container));
                     this.reorder(gestureDetail);
                 }
-                this.gestureDetail = gestureDetail;
             },
-            onEnd,
+            onEnd: onEnd,
             notCaptured: (ev) => {
-                if (started) {
-                    return onEnd(ev);
-                }
+                return onEnd(ev);
             },
         });
         this.gesture.enable(true);
@@ -354,12 +325,6 @@ class Reorder extends external_lit_namespaceObject.LitElement {
     (0,decorators_js_namespaceObject.property)({ type: String })
 ], Reorder.prototype, "draggableOrigin", void 0);
 (0,external_tslib_namespaceObject.__decorate)([
-    (0,decorators_js_namespaceObject.property)({ attribute: false })
-], Reorder.prototype, "containerSelectors", void 0);
-(0,external_tslib_namespaceObject.__decorate)([
-    (0,decorators_js_namespaceObject.property)({ type: Number })
-], Reorder.prototype, "timeout", void 0);
-(0,external_tslib_namespaceObject.__decorate)([
     (0,decorators_js_namespaceObject.property)({ type: String })
 ], Reorder.prototype, "direction", void 0);
 (0,external_tslib_namespaceObject.__decorate)([
@@ -369,7 +334,8 @@ window.customElements.define("viskit-reorder", Reorder);
 
 var __webpack_exports__DragEvent = __webpack_exports__._t;
 var __webpack_exports__DropEvent = __webpack_exports__.AP;
+var __webpack_exports__EndEvent = __webpack_exports__.w4;
 var __webpack_exports__Reorder = __webpack_exports__.tm;
 var __webpack_exports__ReorderEvent = __webpack_exports__.tO;
 var __webpack_exports__StartEvent = __webpack_exports__.T4;
-export { __webpack_exports__DragEvent as DragEvent, __webpack_exports__DropEvent as DropEvent, __webpack_exports__Reorder as Reorder, __webpack_exports__ReorderEvent as ReorderEvent, __webpack_exports__StartEvent as StartEvent };
+export { __webpack_exports__DragEvent as DragEvent, __webpack_exports__DropEvent as DropEvent, __webpack_exports__EndEvent as EndEvent, __webpack_exports__Reorder as Reorder, __webpack_exports__ReorderEvent as ReorderEvent, __webpack_exports__StartEvent as StartEvent };

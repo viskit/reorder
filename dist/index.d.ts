@@ -41,6 +41,11 @@ export declare type ReorderEventArgs = {
     x: number;
     y: number;
 };
+export declare class EndEvent extends StartEvent {
+    draggable: HTMLElement;
+    container: HTMLElement;
+    constructor(detail: GestureDetail, draggable: HTMLElement, container: HTMLElement);
+}
 export declare class ReorderEvent extends StartEvent {
     constructor({ draggable, container, gestureDetail, hoverContainer, hoverIndex, hoverable, hoverableRect, draggableRect, draggableIndex, x, y, }: ReorderEventArgs, type?: string);
     hoverable: HTMLElement;
@@ -58,23 +63,16 @@ export declare class DropEvent extends Event {
     constructor(complete: (after?: boolean) => void, data?: any);
 }
 export declare class Reorder extends LitElement {
-    canStart(args: GestureDetail & {
-        draggable: HTMLElement;
-        container: HTMLElement;
-    }): boolean;
+    canStart(args: GestureDetail): boolean;
     draggableOrigin: DraggableOrigin;
     dataCacheMap: DataCacheMap;
     gesture: Gesture;
     private gestureDetail;
     containers: HTMLElement[];
-    containerSelectors: string | string[];
-    timeout: number;
     private reorder;
     direction: "x" | "y";
     hoverPosition(x: number, y: number, width: number, height: number, currentX: number, currentY: number): ["left" | "right", "top" | "bottom"];
     private within;
-    private updateContainers;
-    updated(map: Map<string, any>): void;
     private calcCacheData;
     private offsetX;
     private offsetY;

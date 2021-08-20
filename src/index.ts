@@ -80,6 +80,16 @@ export type ReorderEventArgs = {
   y: number;
 };
 
+export class EndEvent extends StartEvent {
+  constructor(
+    detail: GestureDetail,
+    public draggable: HTMLElement,
+    public container: HTMLElement
+  ) {
+    super(detail, draggable, container, "viskit-end");
+  }
+}
+
 export class ReorderEvent extends StartEvent {
   constructor(
     {
@@ -132,9 +142,7 @@ export class DropEvent extends Event {
 
 export class Reorder extends LitElement {
   @property({ attribute: false })
-  public canStart(
-    args: GestureDetail & { draggable: HTMLElement; container: HTMLElement }
-  ) {
+  public canStart(args: GestureDetail) {
     return true;
   }
 
@@ -304,6 +312,14 @@ export class Reorder extends LitElement {
             }
           }, gestureDetail.data)
         );
+      } else {
+        this.dispatchEvent(
+          new EndEvent(
+            gestureDetail,
+            gestureDetail.data.draggable,
+            gestureDetail.data.container
+          )
+        );
       }
     };
 
@@ -312,7 +328,7 @@ export class Reorder extends LitElement {
       direction: "y",
       gestureName: "pzl-reorder-list",
       disableScroll: false,
-      canStart: this.canStart,
+      canStart: (ev) => this.canStart(ev),
       onStart: (gestureDetail: GestureDetail) => {
         started = false;
         this.calcCacheData();
