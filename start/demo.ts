@@ -1,6 +1,12 @@
 import { LitElement, html, css } from "lit";
-import {property, state,query,queryAll} from "lit/decorators.js";
-import { StartEvent, DropEvent, ReorderEvent, DragEvent, Reorder } from "../src/index";
+import { property, state, query, queryAll } from "lit/decorators.js";
+import {
+  StartEvent,
+  DropEvent,
+  ReorderEvent,
+  DragEvent,
+  Reorder,
+} from "../src/index";
 import "../src/index";
 import clone from "clone-element";
 
@@ -45,10 +51,9 @@ export class Demo extends LitElement {
   containers: NodeList;
 
   @query("viskit-reorder")
-  reorder:Reorder;
+  reorder: Reorder;
 
-
-  onStart({draggable,data}: StartEvent) {
+  onStart({ draggable, data }: StartEvent) {
     // clone
     const dragEl = clone(draggable) as HTMLElement;
     const { left, top, width, height } = draggable.getBoundingClientRect();
@@ -69,11 +74,12 @@ export class Demo extends LitElement {
     draggable.style.opacity = "0";
   }
 
-  onDrag({data,deltaY}: DragEvent) {
+  onDrag({ data, deltaY }: DragEvent) {
     data.dragEl.style.transform = `translateY(${deltaY}px)`;
   }
 
-  onReorder({data,
+  onReorder({
+    data,
     y,
     container,
     hoverIndex,
@@ -87,7 +93,6 @@ export class Demo extends LitElement {
     const prevHoverContainer = data.hoverContainer as HTMLElement;
 
     // clear prev
-
 
     let index = hoverIndex;
 
@@ -145,38 +150,40 @@ export class Demo extends LitElement {
         }
       }
     } else {
-      const fromTop = draggableRect.top < hoverableRect.top;
+      if (hoverable) {
+        const fromTop = draggableRect.top < hoverableRect.top;
 
-      if (y > hoverableRect.top + hoverableRect.height / 2) {
-        ++index;
-        data.after = true;
-      } else {
-        data.after = false;
-      }
-      const children = Array.from(hoverContainer.children) as HTMLElement[];
-      for (let i = 0, len = children.length; i < len; i++) {
-        let y = 0;
-
-        if (index === children.length) {
-          y = -draggableRect.height;
+        if (y > hoverableRect.top + hoverableRect.height / 2) {
+          ++index;
+          data.after = true;
         } else {
-          if (i >= index) {
-            y = draggableRect.height;
+          data.after = false;
+        }
+        const children = Array.from(hoverContainer.children) as HTMLElement[];
+        for (let i = 0, len = children.length; i < len; i++) {
+          let y = 0;
+
+          if (index === children.length) {
+            y = -draggableRect.height;
+          } else {
+            if (i >= index) {
+              y = draggableRect.height;
+            }
           }
-        }
 
-        children[i].classList.contains("transform") ||
-          children[i].classList.add("transform");
+          children[i].classList.contains("transform") ||
+            children[i].classList.add("transform");
 
-        if (
-          (fromTop && hoverIndex === 0 && !data.after) ||
-          (!fromTop &&
-            hoverIndex === hoverContainer.children.length - 1 &&
-            data.after)
-        ) {
-          y = y / 2;
+          if (
+            (fromTop && hoverIndex === 0 && !data.after) ||
+            (!fromTop &&
+              hoverIndex === hoverContainer.children.length - 1 &&
+              data.after)
+          ) {
+            y = y / 2;
+          }
+          children[i].style.transform = `translateY(${y}px)`;
         }
-        children[i].style.transform = `translateY(${y}px)`;
       }
     }
 
@@ -184,17 +191,14 @@ export class Demo extends LitElement {
     data.dropIndex = index;
   }
 
-  onDrop({data,complete}: DropEvent) {
+  onDrop({ data, complete }: DropEvent) {
     data.dragEl.remove();
     data.draggable.style.opacity = "1";
 
-    data.hoverContainer &&
-      clear(data.hoverContainer.children);
+    data.hoverContainer && clear(data.hoverContainer.children);
     data.container && clear(data.container.children);
 
-    if (data.draggable !== data.hoverable) {
-      complete(data.after);
-    }
+    complete(data.after);
   }
 
   render() {
@@ -204,7 +208,6 @@ export class Demo extends LitElement {
         @viskit-drag=${this.onDrag}
         @viskit-reorder=${this.onReorder}
         @viskit-drop=${this.onDrop}
-        
       >
         <div id="c1" class="container">
           <div id="a" class="item">a</div>
@@ -220,10 +223,9 @@ export class Demo extends LitElement {
     `;
   }
 
-  firstUpdated(){
+  firstUpdated() {
     this.reorder.containers = Array.from(this.containers) as HTMLElement[];
   }
-
 }
 
 window.customElements.define("zl-demo", Demo);

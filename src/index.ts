@@ -186,43 +186,43 @@ export class Reorder extends LitElement {
             if (this.within(x, y, width, height, triggerX, triggerY)) {
               const hoverable = child as HTMLElement;
               const hoverIndex = index;
-              const { index: draggableIndex, rect: draggableRect } =
-                this.dataCacheMap.get(
-                  gestureDetail.data.draggable as HTMLElement
-                );
+
               gestureDetail.data = {
                 ...gestureDetail.data,
                 hoverable,
                 hoverContainer,
                 hoverIndex,
-                draggableIndex,
                 draggable: gestureDetail.data.draggable,
                 container: gestureDetail.data.container,
-                draggableRect,
                 hoverableRect: this.dataCacheMap.get(hoverable).rect,
                 x: triggerX,
                 y: triggerY,
               };
-              this.dispatchEvent(
-                new ReorderEvent({
-                  gestureDetail,
-                  hoverable,
-                  hoverContainer,
-                  hoverIndex,
-                  draggableIndex,
-                  draggable: gestureDetail.data.draggable,
-                  container: gestureDetail.data.container,
-                  draggableRect,
-                  hoverableRect: this.dataCacheMap.get(hoverable).rect,
-                  x: triggerX,
-                  y: triggerY,
-                })
-              );
 
               break;
             }
           }
         }
+        const { index: draggableIndex, rect: draggableRect } =
+          this.dataCacheMap.get(gestureDetail.data.draggable as HTMLElement);
+        this.dispatchEvent(
+          new ReorderEvent({
+            gestureDetail,
+            hoverable: gestureDetail.data.hoverable,
+            hoverContainer,
+            hoverableRect: gestureDetail.data.hoverable
+              ? this.dataCacheMap.get(gestureDetail.data.hoverable).rect
+              : null,
+            hoverIndex: gestureDetail.data.hoverIndex,
+
+            draggableIndex,
+            draggable: gestureDetail.data.draggable,
+            container: gestureDetail.data.container,
+            draggableRect,
+            x: triggerX,
+            y: triggerY,
+          })
+        );
         break;
       }
     }
@@ -298,29 +298,30 @@ export class Reorder extends LitElement {
         this.dispatchEvent(
           new DropEvent((after = true) => {
             const selectedItemEl = gestureDetail.data.draggable as HTMLElement;
-
             if (selectedItemEl) {
               const { hoverContainer, hoverable, hoverIndex } =
                 gestureDetail.data;
-              if (hoverable) {
+              if (hoverContainer.children.length) {
                 hoverable.insertAdjacentElement(
                   after ? "afterend" : "beforebegin",
                   selectedItemEl
                 );
-                this.mutation();
+              } else {
+                hoverContainer.appendChild(selectedItemEl);
               }
+              this.mutation();
             }
           }, gestureDetail.data)
         );
-      } else {
-        this.dispatchEvent(
-          new EndEvent(
-            gestureDetail,
-            gestureDetail.data.draggable,
-            gestureDetail.data.container
-          )
-        );
       }
+      gestureDetail.data || (gestureDetail.data = {});
+      this.dispatchEvent(
+        new EndEvent(
+          gestureDetail,
+          gestureDetail.data.draggable,
+          gestureDetail.data.container
+        )
+      );
     };
 
     this.gesture = createGesture({
@@ -344,8 +345,8 @@ export class Reorder extends LitElement {
               rect.y,
               rect.width,
               rect.height,
-              gestureDetail.currentX,
-              gestureDetail.currentY
+              gestureDetail.startX,
+              gestureDetail.startY
             )
           ) {
             container = _container;
@@ -359,8 +360,8 @@ export class Reorder extends LitElement {
                     rect.y,
                     rect.width,
                     rect.height,
-                    gestureDetail.currentX,
-                    gestureDetail.currentY
+                    gestureDetail.startX,
+                    gestureDetail.startY
                   )
                 ) {
                   draggable = child;
