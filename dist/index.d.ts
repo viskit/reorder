@@ -67,11 +67,14 @@ export declare class Reorder extends LitElement {
     gesture: Gesture;
     private gestureDetail;
     containers: HTMLElement[];
+    containerSelectors: string | string[];
     timeout: number;
     private reorder;
     direction: "x" | "y";
     hoverPosition(x: number, y: number, width: number, height: number, currentX: number, currentY: number): ["left" | "right", "top" | "bottom"];
     private within;
+    private updateContainers;
+    updated(map: Map<string, any>): void;
     private calcCacheData;
     private offsetX;
     private offsetY;
@@ -80,7 +83,6 @@ export declare class Reorder extends LitElement {
         y: number;
     }) => void>;
     firstUpdated(): void;
-    updated(): void;
     createRenderRoot(): this;
 }
 declare global {

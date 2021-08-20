@@ -94,6 +94,7 @@ class Reorder extends external_lit_namespaceObject.LitElement {
         this.draggableOrigin = "center-center";
         this.dataCacheMap = null;
         this.containers = [this];
+        this.containerSelectors = "";
         this.timeout = 500;
         this.reorder = (0,external_lodash_namespaceObject.debounce)((gestureDetail) => {
             let { currentX, currentY, data: { triggerOffsetX, triggerOffsetY, draggable }, } = gestureDetail;
@@ -143,6 +144,7 @@ class Reorder extends external_lit_namespaceObject.LitElement {
         this.offsetX = 0;
         this.offsetY = 0;
         this.mutation = (0,external_lodash_namespaceObject.debounce)((offset) => {
+            this.updateContainers();
             if (offset) {
                 this.offsetX = offset.x;
                 this.offsetY = offset.y;
@@ -169,6 +171,31 @@ class Reorder extends external_lit_namespaceObject.LitElement {
             x + width >= currentX &&
             y <= currentY &&
             y + height >= currentY);
+    }
+    updateContainers() {
+        this.containers = [];
+        if (this.containerSelectors) {
+            for (let selector of this.containerSelectors) {
+                const containerList = this.querySelectorAll(selector);
+                this.containers = [
+                    ...this.containers,
+                    ...Array.from(containerList),
+                ];
+            }
+            this.containers = this.containers.sort((ac, bc) => {
+                const { top: btop } = bc.getBoundingClientRect();
+                const { top: atop } = ac.getBoundingClientRect();
+                return atop - btop;
+            });
+        }
+        else {
+            this.containers = [this];
+        }
+    }
+    updated(map) {
+        if (map.has("containerSelectors")) {
+            this.updateContainers();
+        }
     }
     calcCacheData() {
         this.dataCacheMap = new Map();
@@ -316,19 +343,19 @@ class Reorder extends external_lit_namespaceObject.LitElement {
         });
         this.gesture.enable(true);
     }
-    updated() {
-        console.log(this.containers);
-    }
     createRenderRoot() {
         return this;
     }
 }
 (0,external_tslib_namespaceObject.__decorate)([
+    (0,decorators_js_namespaceObject.property)({ attribute: false })
+], Reorder.prototype, "canStart", null);
+(0,external_tslib_namespaceObject.__decorate)([
     (0,decorators_js_namespaceObject.property)({ type: String })
 ], Reorder.prototype, "draggableOrigin", void 0);
 (0,external_tslib_namespaceObject.__decorate)([
     (0,decorators_js_namespaceObject.property)({ attribute: false })
-], Reorder.prototype, "containers", void 0);
+], Reorder.prototype, "containerSelectors", void 0);
 (0,external_tslib_namespaceObject.__decorate)([
     (0,decorators_js_namespaceObject.property)({ type: Number })
 ], Reorder.prototype, "timeout", void 0);

@@ -131,6 +131,7 @@ export class DropEvent extends Event {
 }
 
 export class Reorder extends LitElement {
+  @property({attribute:false})
   public canStart(
     args: GestureDetail & { draggable: HTMLElement; container: HTMLElement }
   ) {
