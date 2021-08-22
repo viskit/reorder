@@ -1,5 +1,7 @@
 import { LitElement, html, css } from "lit";
 import { property, state, query, queryAll } from "lit/decorators.js";
+import { register } from "@viskit/long-press";
+
 import {
   StartEvent,
   DropEvent,
@@ -55,27 +57,10 @@ export class Demo extends LitElement {
 
   onStart({ draggable, data }: StartEvent) {
     // clone
-    const dragEl = clone(draggable) as HTMLElement;
-    const { left, top, width, height } = draggable.getBoundingClientRect();
-    dragEl.style.position = "absolute";
-    dragEl.style.top = top + "px";
-    dragEl.style.left = left + "px";
-    dragEl.style.margin = "0";
-    dragEl.style.width = width + "px";
-    dragEl.style.height = height + "px";
-
-    dragEl.classList.add("draggable");
-
-    // dragEl.style.transform = `translateY(${}px)`;
-    data.dragEl = dragEl;
-
-    document.body.appendChild(dragEl);
-
-    draggable.style.opacity = "0";
   }
 
   onDrag({ data, deltaY }: DragEvent) {
-    data.dragEl.style.transform = `translateY(${deltaY}px)`;
+    this.dragEl.style.transform = `translateY(${deltaY}px)`;
   }
 
   onReorder({
@@ -192,14 +177,10 @@ export class Demo extends LitElement {
   }
 
   onDrop({ data, complete }: DropEvent) {
-    data.dragEl.remove();
-    data.draggable.style.opacity = "1";
-
-    data.hoverContainer && clear(data.hoverContainer.children);
-    data.container && clear(data.container.children);
-
     complete(data.after);
   }
+
+  private dragEl: HTMLElement;
 
   render() {
     return html`
@@ -208,6 +189,15 @@ export class Demo extends LitElement {
         @viskit-drag=${this.onDrag}
         @viskit-reorder=${this.onReorder}
         @viskit-drop=${this.onDrop}
+        @viskit-end=${({data}) => {
+          this.reorder.enable = false;
+          this.dragEl && this.dragEl.remove();
+          data.draggable && (data.draggable.style.opacity = "1");
+      
+          data.hoverContainer && clear(data.hoverContainer.children);
+          data.container && clear(data.container.children);
+      
+        }}
       >
         <div id="c1" class="container">
           <div id="a" class="item">a</div>
@@ -217,7 +207,33 @@ export class Demo extends LitElement {
           <div id="b3" class="item">b3</div>
         </div>
         <div id="c2" class="container">
-          <div id="d" class="item">d</div>
+          <div
+            id="d"
+            class="item"
+            data-delay="1000"
+            @long-press=${(e) => {
+              this.reorder.enable = true;
+
+              const dragEl = clone(e.target) as HTMLElement;
+              const { left, top, width, height } =
+                e.target.getBoundingClientRect();
+              dragEl.style.position = "absolute";
+              dragEl.style.top = top + "px";
+              dragEl.style.left = left + "px";
+              dragEl.style.margin = "0";
+              dragEl.style.width = width + "px";
+              dragEl.style.height = height + "px";
+              dragEl.style.pointerEvents = "none";
+              dragEl.classList.add("draggable");
+
+              // dragEl.style.transform = `translateY(${}px)`;
+              this.dragEl = dragEl;
+              e.target.style.opacity = "0";
+              document.body.appendChild(dragEl);
+            }}
+          >
+            
+          </div>
         </div>
       </viskit-reorder>
     `;
@@ -225,6 +241,7 @@ export class Demo extends LitElement {
 
   firstUpdated() {
     this.reorder.containers = Array.from(this.containers) as HTMLElement[];
+    register(this.shadowRoot);
   }
 }
 

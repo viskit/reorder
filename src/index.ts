@@ -115,7 +115,6 @@ export class ReorderEvent extends StartEvent {
     this.draggableIndex = draggableIndex;
     this.hoverableRect = hoverableRect;
     this.draggableRect = draggableRect;
-
     this.x = x;
     this.y = y;
   }
@@ -141,11 +140,6 @@ export class DropEvent extends Event {
 }
 
 export class Reorder extends LitElement {
-  @property({ attribute: false })
-  public canStart(args: GestureDetail) {
-    return true;
-  }
-
   @property({ type: String })
   draggableOrigin: DraggableOrigin = "center-center";
 
@@ -231,6 +225,8 @@ export class Reorder extends LitElement {
   @property({ type: String })
   direction: "x" | "y" = "y";
 
+  public enable = true;
+
   @property({ attribute: false })
   hoverPosition(
     x: number,
@@ -294,6 +290,7 @@ export class Reorder extends LitElement {
     let started = false;
 
     const onEnd = (gestureDetail: GestureDetail) => {
+      gestureDetail.data || (gestureDetail.data = {});
       if (started) {
         this.dispatchEvent(
           new DropEvent((after = true) => {
@@ -314,7 +311,6 @@ export class Reorder extends LitElement {
           }, gestureDetail.data)
         );
       }
-      gestureDetail.data || (gestureDetail.data = {});
       this.dispatchEvent(
         new EndEvent(
           gestureDetail,
@@ -328,122 +324,124 @@ export class Reorder extends LitElement {
       el: this,
       direction: "y",
       gestureName: "pzl-reorder-list",
-      disableScroll: false,
-      canStart: (ev) => this.canStart(ev),
+      disableScroll: true,
       onStart: (gestureDetail: GestureDetail) => {
         started = false;
-        this.calcCacheData();
+        if (this.enable) {
+          this.calcCacheData();
 
-        let draggable: HTMLElement, container: HTMLElement;
-        let draggableRect: DOMRect;
+          let draggable: HTMLElement, container: HTMLElement;
+          let draggableRect: DOMRect;
 
-        for (let _container of this.containers) {
-          const { rect } = this.dataCacheMap.get(_container);
-          if (
-            this.within(
-              rect.x,
-              rect.y,
-              rect.width,
-              rect.height,
-              gestureDetail.startX,
-              gestureDetail.startY
-            )
-          ) {
-            container = _container;
-            const children = Array.from(container.children) as HTMLElement[];
-            for (let child of children) {
-              if (this.dataCacheMap.has(child)) {
-                const { rect, index } = this.dataCacheMap.get(child);
-                if (
-                  this.within(
-                    rect.x,
-                    rect.y,
-                    rect.width,
-                    rect.height,
-                    gestureDetail.startX,
-                    gestureDetail.startY
-                  )
-                ) {
-                  draggable = child;
-                  draggableRect = rect;
-                  break;
+          for (let _container of this.containers) {
+            const { rect } = this.dataCacheMap.get(_container);
+            if (
+              this.within(
+                rect.x,
+                rect.y,
+                rect.width,
+                rect.height,
+                gestureDetail.startX,
+                gestureDetail.startY
+              )
+            ) {
+              container = _container;
+              const children = Array.from(container.children) as HTMLElement[];
+              for (let child of children) {
+                if (this.dataCacheMap.has(child)) {
+                  const { rect, index } = this.dataCacheMap.get(child);
+                  if (
+                    this.within(
+                      rect.x,
+                      rect.y,
+                      rect.width,
+                      rect.height,
+                      gestureDetail.startX,
+                      gestureDetail.startY
+                    )
+                  ) {
+                    draggable = child;
+                    draggableRect = rect;
+                    break;
+                  }
                 }
               }
+              break;
             }
-            break;
           }
-        }
+          if (draggable) {
+            gestureDetail.data = {
+              ...gestureDetail.data,
+              draggable,
+              container,
+            };
 
-        if (draggable) {
-          gestureDetail.data = {
-            ...gestureDetail.data,
-            draggable,
-            container,
-          };
+            // calc drggable trigger point by origin
+            let triggerOffsetX = 0;
+            let triggerOffsetY = 0;
+            if (this.draggableOrigin !== "current") {
+              const { startX, startY } = gestureDetail;
+              const { left, top, width, height } = draggableRect;
+              switch (this.draggableOrigin) {
+                case "center-center":
+                  triggerOffsetX = width / 2 + left;
+                  triggerOffsetY = height / 2 + top;
+                  break;
+                case "center-left":
+                  triggerOffsetX = left;
+                  triggerOffsetY = height / 2 + top;
+                  break;
+                case "center-right":
+                  triggerOffsetX = width + left;
+                  triggerOffsetY = height / 2 + top;
+                  break;
 
-          // calc drggable trigger point by origin
-          let triggerOffsetX = 0;
-          let triggerOffsetY = 0;
-          if (this.draggableOrigin !== "current") {
-            const { startX, startY } = gestureDetail;
-            const { left, top, width, height } = draggableRect;
-            switch (this.draggableOrigin) {
-              case "center-center":
-                triggerOffsetX = width / 2 + left;
-                triggerOffsetY = height / 2 + top;
-                break;
-              case "center-left":
-                triggerOffsetX = left;
-                triggerOffsetY = height / 2 + top;
-                break;
-              case "center-right":
-                triggerOffsetX = width + left;
-                triggerOffsetY = height / 2 + top;
-                break;
+                case "top-center":
+                  triggerOffsetX = width / 2 + left;
+                  triggerOffsetY = top;
+                  break;
 
-              case "top-center":
-                triggerOffsetX = width / 2 + left;
-                triggerOffsetY = top;
-                break;
+                case "top-left":
+                  triggerOffsetX = left;
+                  triggerOffsetY = top;
+                  break;
 
-              case "top-left":
-                triggerOffsetX = left;
-                triggerOffsetY = top;
-                break;
+                case "top-right":
+                  triggerOffsetX = width + left;
+                  triggerOffsetY = top;
+                  break;
 
-              case "top-right":
-                triggerOffsetX = width + left;
-                triggerOffsetY = top;
-                break;
+                case "bottom-center":
+                  triggerOffsetX = width / 2 + left;
+                  triggerOffsetY = height + top;
+                  break;
 
-              case "bottom-center":
-                triggerOffsetX = width / 2 + left;
-                triggerOffsetY = height + top;
-                break;
+                case "bottom-left":
+                  triggerOffsetX = left;
+                  triggerOffsetY = height + top;
+                  break;
 
-              case "bottom-left":
-                triggerOffsetX = left;
-                triggerOffsetY = height + top;
-                break;
+                case "bottom-right":
+                  triggerOffsetX = width + left;
+                  triggerOffsetY = height + top;
+                  break;
+              }
 
-              case "bottom-right":
-                triggerOffsetX = width + left;
-                triggerOffsetY = height + top;
-                break;
+              triggerOffsetX -= startX;
+              triggerOffsetY -= startY;
+
+              gestureDetail.data.triggerOffsetX = triggerOffsetX;
+              gestureDetail.data.triggerOffsetY = triggerOffsetY;
+
+              this.dispatchEvent(
+                new StartEvent(gestureDetail, draggable, container)
+              );
             }
-
-            triggerOffsetX -= startX;
-            triggerOffsetY -= startY;
-
-            gestureDetail.data.triggerOffsetX = triggerOffsetX;
-            gestureDetail.data.triggerOffsetY = triggerOffsetY;
-
-            this.dispatchEvent(
-              new StartEvent(gestureDetail, draggable, container)
-            );
 
             started = true;
           }
+        } else {
+          onEnd(gestureDetail);
         }
       },
 

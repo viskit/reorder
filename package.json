@@ -1,6 +1,6 @@
 {
   "name": "@viskit/reorder",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "reorder web component",
   "main": "dist/index.js",
   "scripts": {
@@ -21,6 +21,7 @@
   "devDependencies": {
     "@4tw/cypress-drag-drop": "^1.8.0",
     "@types/lodash": "^4.14.172",
+    "@viskit/long-press": "^0.0.2",
     "@viskit/webpack-configs": "^0.0.1",
     "clone-element": "^0.1.0",
     "cypress": "8.2.0"

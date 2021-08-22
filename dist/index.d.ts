@@ -63,7 +63,6 @@ export declare class DropEvent extends Event {
     constructor(complete: (after?: boolean) => void, data?: any);
 }
 export declare class Reorder extends LitElement {
-    canStart(args: GestureDetail): boolean;
     draggableOrigin: DraggableOrigin;
     dataCacheMap: DataCacheMap;
     gesture: Gesture;
@@ -71,6 +70,7 @@ export declare class Reorder extends LitElement {
     containers: HTMLElement[];
     private reorder;
     direction: "x" | "y";
+    enable: boolean;
     hoverPosition(x: number, y: number, width: number, height: number, currentX: number, currentY: number): ["left" | "right", "top" | "bottom"];
     private within;
     private calcCacheData;
