@@ -151,6 +151,10 @@ export class Reorder extends LitElement {
 
   containers: HTMLElement[] = [this];
 
+  public canStart(gestureDetail: GestureDetail) {
+    return Promise.resolve(true);
+  }
+
   private reorder = debounce((gestureDetail: GestureDetail) => {
     let {
       currentX,
@@ -225,8 +229,6 @@ export class Reorder extends LitElement {
   @property({ type: String })
   direction: "x" | "y" = "y";
 
-  public enable = true;
-
   @property({ attribute: false })
   hoverPosition(
     x: number,
@@ -290,6 +292,7 @@ export class Reorder extends LitElement {
     let started = false;
 
     const onEnd = (gestureDetail: GestureDetail) => {
+      this.gestureDetail = null;
       gestureDetail.data || (gestureDetail.data = {});
       if (started) {
         this.dispatchEvent(
@@ -325,9 +328,12 @@ export class Reorder extends LitElement {
       direction: "y",
       gestureName: "pzl-reorder-list",
       disableScroll: true,
+      onWillStart: async (gestureDetail: GestureDetail) => {
+        started = await this.canStart(gestureDetail);
+      },
       onStart: (gestureDetail: GestureDetail) => {
         started = false;
-        if (this.enable) {
+        if (started) {
           this.calcCacheData();
 
           let draggable: HTMLElement, container: HTMLElement;
@@ -454,6 +460,7 @@ export class Reorder extends LitElement {
               gestureDetail.data.container
             )
           );
+          this.gestureDetail = gestureDetail;
           this.reorder(gestureDetail);
         }
       },
