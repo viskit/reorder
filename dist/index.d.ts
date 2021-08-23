@@ -70,8 +70,10 @@ export declare class Reorder extends LitElement {
     containers: HTMLElement[];
     private reorder;
     direction: "x" | "y";
-    enable: boolean;
     hoverPosition(x: number, y: number, width: number, height: number, currentX: number, currentY: number): ["left" | "right", "top" | "bottom"];
+    enable: boolean;
+    canStart: (_: GestureDetail) => boolean;
+    onWillStart: (_: GestureDetail) => Promise<void>;
     private within;
     private calcCacheData;
     private offsetX;

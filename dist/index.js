@@ -148,7 +148,7 @@ class Reorder extends external_lit_namespaceObject.LitElement {
             }
         });
         this.direction = "y";
-        this.enable = true;
+        this.enable = false;
         this.offsetX = 0;
         this.offsetY = 0;
         this.mutation = (0,external_lodash_namespaceObject.debounce)((offset) => {
@@ -197,6 +197,7 @@ class Reorder extends external_lit_namespaceObject.LitElement {
     firstUpdated() {
         let started = false;
         const onEnd = (gestureDetail) => {
+            this.gestureDetail = null;
             gestureDetail.data || (gestureDetail.data = {});
             if (started) {
                 this.dispatchEvent(new DropEvent((after = true) => {
@@ -220,6 +221,8 @@ class Reorder extends external_lit_namespaceObject.LitElement {
             direction: "y",
             gestureName: "pzl-reorder-list",
             disableScroll: true,
+            canStart: this.canStart,
+            onWillStart: this.onWillStart,
             onStart: (gestureDetail) => {
                 started = false;
                 if (this.enable) {
@@ -307,6 +310,7 @@ class Reorder extends external_lit_namespaceObject.LitElement {
             onMove: (gestureDetail) => {
                 if (started) {
                     this.dispatchEvent(new DragEvent(gestureDetail, gestureDetail.data.draggable, gestureDetail.data.container));
+                    this.gestureDetail = gestureDetail;
                     this.reorder(gestureDetail);
                 }
             },

@@ -75,6 +75,8 @@ export class Demo extends LitElement {
     draggableRect,
     hoverableRect,
   }: ReorderEvent) {
+    console.log("onreorder...");
+
     const prevHoverContainer = data.hoverContainer as HTMLElement;
 
     // clear prev
@@ -177,6 +179,7 @@ export class Demo extends LitElement {
   }
 
   onDrop({ data, complete }: DropEvent) {
+    console.log("ondrop");
     complete(data.after);
   }
 
@@ -189,14 +192,13 @@ export class Demo extends LitElement {
         @viskit-drag=${this.onDrag}
         @viskit-reorder=${this.onReorder}
         @viskit-drop=${this.onDrop}
-        @viskit-end=${({data}) => {
+        @viskit-end=${({ data }) => {
           this.reorder.enable = false;
           this.dragEl && this.dragEl.remove();
           data.draggable && (data.draggable.style.opacity = "1");
-      
+
           data.hoverContainer && clear(data.hoverContainer.children);
           data.container && clear(data.container.children);
-      
         }}
       >
         <div id="c1" class="container">
@@ -212,11 +214,16 @@ export class Demo extends LitElement {
             class="item"
             data-delay="1000"
             @long-press=${(e) => {
-              this.reorder.enable = true;
-
-              const dragEl = clone(e.target) as HTMLElement;
+              const draggable = e.target;
+              const dragEl = draggable.cloneNode(true) as HTMLElement;
               const { left, top, width, height } =
                 e.target.getBoundingClientRect();
+              const styles = window.getComputedStyle(draggable);
+
+              for (let i = 0, len = styles.length; i < len; i++) {
+                const key = styles.item(i);
+                dragEl.style.setProperty(key, styles.getPropertyValue(key));
+              }
               dragEl.style.position = "absolute";
               dragEl.style.top = top + "px";
               dragEl.style.left = left + "px";
@@ -224,15 +231,17 @@ export class Demo extends LitElement {
               dragEl.style.width = width + "px";
               dragEl.style.height = height + "px";
               dragEl.style.pointerEvents = "none";
-              dragEl.classList.add("draggable");
+              // dragEl.classList.add("draggable");
 
               // dragEl.style.transform = `translateY(${}px)`;
               this.dragEl = dragEl;
               e.target.style.opacity = "0";
               document.body.appendChild(dragEl);
+
+              this.reorder.enable = true;
             }}
           >
-            
+            hi
           </div>
         </div>
       </viskit-reorder>

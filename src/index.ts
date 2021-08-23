@@ -1,5 +1,5 @@
 import { LitElement } from "lit";
-import { state, property } from "lit/decorators.js";
+import { property } from "lit/decorators.js";
 import { createGesture, Gesture, GestureDetail } from "@ionic/core";
 import { debounce } from "lodash";
 
@@ -151,10 +151,6 @@ export class Reorder extends LitElement {
 
   containers: HTMLElement[] = [this];
 
-  public canStart(gestureDetail: GestureDetail) {
-    return Promise.resolve(true);
-  }
-
   private reorder = debounce((gestureDetail: GestureDetail) => {
     let {
       currentX,
@@ -184,7 +180,6 @@ export class Reorder extends LitElement {
             if (this.within(x, y, width, height, triggerX, triggerY)) {
               const hoverable = child as HTMLElement;
               const hoverIndex = index;
-
               gestureDetail.data = {
                 ...gestureDetail.data,
                 hoverable,
@@ -243,6 +238,12 @@ export class Reorder extends LitElement {
       currentY <= y + height / 2 ? "top" : "bottom",
     ];
   }
+
+  enable = false;
+
+  canStart:(_: GestureDetail) => boolean;
+
+  onWillStart: (_: GestureDetail) => Promise<void>;
 
   private within(x, y, width, height, currentX, currentY) {
     return (
@@ -328,12 +329,12 @@ export class Reorder extends LitElement {
       direction: "y",
       gestureName: "pzl-reorder-list",
       disableScroll: true,
-      onWillStart: async (gestureDetail: GestureDetail) => {
-        started = await this.canStart(gestureDetail);
-      },
+      canStart:this.canStart,
+      onWillStart:this.onWillStart,
       onStart: (gestureDetail: GestureDetail) => {
         started = false;
-        if (started) {
+        if (this.enable) {
+        
           this.calcCacheData();
 
           let draggable: HTMLElement, container: HTMLElement;
