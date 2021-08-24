@@ -75,7 +75,6 @@ export class Demo extends LitElement {
     draggableRect,
     hoverableRect,
   }: ReorderEvent) {
-    console.log("onreorder...");
 
     const prevHoverContainer = data.hoverContainer as HTMLElement;
 
@@ -200,6 +199,7 @@ export class Demo extends LitElement {
           data.hoverContainer && clear(data.hoverContainer.children);
           data.container && clear(data.container.children);
         }}
+        data-longpress-delay="1000"
       >
         <div id="c1" class="container">
           <div id="a" class="item">a</div>
@@ -209,40 +209,7 @@ export class Demo extends LitElement {
           <div id="b3" class="item">b3</div>
         </div>
         <div id="c2" class="container">
-          <div
-            id="d"
-            class="item"
-            data-delay="1000"
-            @long-press=${(e) => {
-              const draggable = e.target;
-              const dragEl = draggable.cloneNode(true) as HTMLElement;
-              const { left, top, width, height } =
-                e.target.getBoundingClientRect();
-              const styles = window.getComputedStyle(draggable);
-
-              for (let i = 0, len = styles.length; i < len; i++) {
-                const key = styles.item(i);
-                dragEl.style.setProperty(key, styles.getPropertyValue(key));
-              }
-              dragEl.style.position = "absolute";
-              dragEl.style.top = top + "px";
-              dragEl.style.left = left + "px";
-              dragEl.style.margin = "0";
-              dragEl.style.width = width + "px";
-              dragEl.style.height = height + "px";
-              dragEl.style.pointerEvents = "none";
-              // dragEl.classList.add("draggable");
-
-              // dragEl.style.transform = `translateY(${}px)`;
-              this.dragEl = dragEl;
-              e.target.style.opacity = "0";
-              document.body.appendChild(dragEl);
-
-              this.reorder.enable = true;
-            }}
-          >
-            hi
-          </div>
+          <div id="d" class="item">hi</div>
         </div>
       </viskit-reorder>
     `;
@@ -251,6 +218,39 @@ export class Demo extends LitElement {
   firstUpdated() {
     this.reorder.containers = Array.from(this.containers) as HTMLElement[];
     register(this.shadowRoot);
+    this.reorder.addEventListener(
+      "long-press",
+      (e: PointerEvent) => {
+        const draggable = e.target as HTMLElement;
+        if (this.reorder.containers.includes(draggable.parentElement)) {
+          const dragEl = draggable.cloneNode(true) as HTMLElement;
+          const { left, top, width, height } =
+            draggable.getBoundingClientRect();
+          const styles = window.getComputedStyle(draggable);
+
+          for (let i = 0, len = styles.length; i < len; i++) {
+            const key = styles.item(i);
+            dragEl.style.setProperty(key, styles.getPropertyValue(key));
+          }
+          dragEl.style.position = "absolute";
+          dragEl.style.top = top + "px";
+          dragEl.style.left = left + "px";
+          dragEl.style.margin = "0";
+          dragEl.style.width = width + "px";
+          dragEl.style.height = height + "px";
+          dragEl.style.pointerEvents = "none";
+          // dragEl.classList.add("draggable");
+
+          // dragEl.style.transform = `translateY(${}px)`; 
+          this.dragEl = dragEl;
+          draggable.style.opacity = "0";
+          document.body.appendChild(dragEl);
+
+          this.reorder.enable = true;
+        }
+      },
+      true
+    );
   }
 }
 
