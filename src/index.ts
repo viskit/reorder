@@ -241,7 +241,7 @@ export class Reorder extends LitElement {
 
   enable = false;
 
-  canStart:(_: GestureDetail) => boolean;
+  canStart: (_: GestureDetail) => boolean;
 
   onWillStart: (_: GestureDetail) => Promise<void>;
 
@@ -293,9 +293,12 @@ export class Reorder extends LitElement {
     let started = false;
 
     const onEnd = (gestureDetail: GestureDetail) => {
-      this.gestureDetail = null;
-      gestureDetail.data || (gestureDetail.data = {});
       if (started) {
+
+        started = false;
+
+        this.gestureDetail = null;
+        gestureDetail.data || (gestureDetail.data = {});
         this.dispatchEvent(
           new DropEvent((after = true) => {
             const selectedItemEl = gestureDetail.data.draggable as HTMLElement;
@@ -314,14 +317,15 @@ export class Reorder extends LitElement {
             }
           }, gestureDetail.data)
         );
+
+        this.dispatchEvent(
+          new EndEvent(
+            gestureDetail,
+            gestureDetail.data.draggable,
+            gestureDetail.data.container
+          )
+        );
       }
-      this.dispatchEvent(
-        new EndEvent(
-          gestureDetail,
-          gestureDetail.data.draggable,
-          gestureDetail.data.container
-        )
-      );
     };
 
     this.gesture = createGesture({
@@ -329,12 +333,11 @@ export class Reorder extends LitElement {
       direction: "y",
       gestureName: "pzl-reorder-list",
       disableScroll: true,
-      canStart:this.canStart,
-      onWillStart:this.onWillStart,
+      canStart: this.canStart,
+      onWillStart: this.onWillStart,
       onStart: (gestureDetail: GestureDetail) => {
         started = false;
         if (this.enable) {
-        
           this.calcCacheData();
 
           let draggable: HTMLElement, container: HTMLElement;

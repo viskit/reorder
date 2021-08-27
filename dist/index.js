@@ -197,9 +197,10 @@ class Reorder extends external_lit_namespaceObject.LitElement {
     firstUpdated() {
         let started = false;
         const onEnd = (gestureDetail) => {
-            this.gestureDetail = null;
-            gestureDetail.data || (gestureDetail.data = {});
             if (started) {
+                started = false;
+                this.gestureDetail = null;
+                gestureDetail.data || (gestureDetail.data = {});
                 this.dispatchEvent(new DropEvent((after = true) => {
                     const selectedItemEl = gestureDetail.data.draggable;
                     if (selectedItemEl) {
@@ -213,8 +214,8 @@ class Reorder extends external_lit_namespaceObject.LitElement {
                         this.mutation();
                     }
                 }, gestureDetail.data));
+                this.dispatchEvent(new EndEvent(gestureDetail, gestureDetail.data.draggable, gestureDetail.data.container));
             }
-            this.dispatchEvent(new EndEvent(gestureDetail, gestureDetail.data.draggable, gestureDetail.data.container));
         };
         this.gesture = (0,core_namespaceObject.createGesture)({
             el: this,
