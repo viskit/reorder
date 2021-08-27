@@ -222,32 +222,31 @@ class Reorder extends external_lit_namespaceObject.LitElement {
             direction: "y",
             gestureName: "pzl-reorder-list",
             disableScroll: true,
-            canStart: this.canStart,
+            canStart: (gestureDetail) => {
+                gestureDetail.data = {};
+                const { data, event } = gestureDetail;
+                const els = event.composedPath();
+                const draggable = els.find((el) => this.containers.includes(el.parentElement));
+                if (draggable) {
+                    data.draggable = draggable;
+                    data.container = draggable.parentElement;
+                }
+                else {
+                    return false;
+                }
+                if (this.canStart) {
+                    return this.canStart(gestureDetail);
+                }
+                return true;
+            },
             onWillStart: this.onWillStart,
             onStart: (gestureDetail) => {
                 started = false;
                 if (this.enable) {
                     this.calcCacheData();
-                    let draggable, container;
-                    let draggableRect;
-                    for (let _container of this.containers) {
-                        const { rect } = this.dataCacheMap.get(_container);
-                        if (this.within(rect.x, rect.y, rect.width, rect.height, gestureDetail.startX, gestureDetail.startY)) {
-                            container = _container;
-                            const children = Array.from(container.children);
-                            for (let child of children) {
-                                if (this.dataCacheMap.has(child)) {
-                                    const { rect, index } = this.dataCacheMap.get(child);
-                                    if (this.within(rect.x, rect.y, rect.width, rect.height, gestureDetail.startX, gestureDetail.startY)) {
-                                        draggable = child;
-                                        draggableRect = rect;
-                                        break;
-                                    }
-                                }
-                            }
-                            break;
-                        }
-                    }
+                    const draggable = gestureDetail.data.draggable;
+                    const container = gestureDetail.data.container;
+                    const draggableRect = this.dataCacheMap.get(draggable).rect;
                     if (draggable) {
                         gestureDetail.data = Object.assign(Object.assign({}, gestureDetail.data), { draggable,
                             container });

@@ -294,7 +294,6 @@ export class Reorder extends LitElement {
 
     const onEnd = (gestureDetail: GestureDetail) => {
       if (started) {
-
         started = false;
 
         this.gestureDetail = null;
@@ -333,52 +332,36 @@ export class Reorder extends LitElement {
       direction: "y",
       gestureName: "pzl-reorder-list",
       disableScroll: true,
-      canStart: this.canStart,
+      canStart: (gestureDetail: GestureDetail) => {
+        gestureDetail.data = {};
+        const { data, event } = gestureDetail;
+        const els = event.composedPath();
+        const draggable = els.find((el: any) =>
+          this.containers.includes(el.parentElement)
+        ) as HTMLElement;
+
+        if (draggable) {
+          data.draggable = draggable;
+          data.container = draggable.parentElement;
+        } else {
+          return false;
+        }
+
+        if (this.canStart) {
+          return this.canStart(gestureDetail);
+        }
+        return true;
+      },
       onWillStart: this.onWillStart,
       onStart: (gestureDetail: GestureDetail) => {
         started = false;
         if (this.enable) {
           this.calcCacheData();
 
-          let draggable: HTMLElement, container: HTMLElement;
-          let draggableRect: DOMRect;
+          const draggable: HTMLElement = gestureDetail.data.draggable;
+          const container: HTMLElement = gestureDetail.data.container;
+          const draggableRect: DOMRect = this.dataCacheMap.get(draggable).rect;
 
-          for (let _container of this.containers) {
-            const { rect } = this.dataCacheMap.get(_container);
-            if (
-              this.within(
-                rect.x,
-                rect.y,
-                rect.width,
-                rect.height,
-                gestureDetail.startX,
-                gestureDetail.startY
-              )
-            ) {
-              container = _container;
-              const children = Array.from(container.children) as HTMLElement[];
-              for (let child of children) {
-                if (this.dataCacheMap.has(child)) {
-                  const { rect, index } = this.dataCacheMap.get(child);
-                  if (
-                    this.within(
-                      rect.x,
-                      rect.y,
-                      rect.width,
-                      rect.height,
-                      gestureDetail.startX,
-                      gestureDetail.startY
-                    )
-                  ) {
-                    draggable = child;
-                    draggableRect = rect;
-                    break;
-                  }
-                }
-              }
-              break;
-            }
-          }
           if (draggable) {
             gestureDetail.data = {
               ...gestureDetail.data,
