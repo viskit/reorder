@@ -279,8 +279,12 @@ export class Reorder extends LitElement {
 
   public mutation = debounce((offset?: { x: number; y: number }) => {
     if (offset) {
-      this.offsetX = offset.x;
-      this.offsetY = offset.y;
+      if(offset.x !== this.offsetX || offset.y !== this.offsetY){
+        this.offsetX = offset.x;
+        this.offsetY = offset.y;
+      }else{
+        return;
+      }
     } else {
       this.calcCacheData();
     }
