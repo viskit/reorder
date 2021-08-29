@@ -158,9 +158,6 @@ export class Reorder extends LitElement {
       data: { triggerOffsetX, triggerOffsetY, draggable },
     } = gestureDetail;
 
-    currentX += this.offsetX;
-    currentY += this.offsetY;
-
     const triggerX = currentX + triggerOffsetX + this.offsetX;
     const triggerY = currentY + triggerOffsetY + this.offsetY;
 
@@ -297,6 +294,8 @@ export class Reorder extends LitElement {
     let started = false;
 
     const onEnd = (gestureDetail: GestureDetail) => {
+      this.offsetX = 0;
+      this.offsetY = 0;
       if (started) {
         started = false;
 

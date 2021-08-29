@@ -104,8 +104,6 @@ class Reorder extends external_lit_namespaceObject.LitElement {
         this.containers = [this];
         this.reorder = (0,external_lodash_namespaceObject.debounce)((gestureDetail) => {
             let { currentX, currentY, data: { triggerOffsetX, triggerOffsetY, draggable }, } = gestureDetail;
-            currentX += this.offsetX;
-            currentY += this.offsetY;
             const triggerX = currentX + triggerOffsetX + this.offsetX;
             const triggerY = currentY + triggerOffsetY + this.offsetY;
             for (let hoverContainer of this.containers) {
@@ -202,6 +200,8 @@ class Reorder extends external_lit_namespaceObject.LitElement {
     firstUpdated() {
         let started = false;
         const onEnd = (gestureDetail) => {
+            this.offsetX = 0;
+            this.offsetY = 0;
             if (started) {
                 started = false;
                 this.gestureDetail = null;
