@@ -63,6 +63,7 @@ export declare class DropEvent extends Event {
     constructor(complete: (after?: boolean) => void, data?: any);
 }
 export declare class Reorder extends LitElement {
+    static styles: import("lit").CSSResultGroup;
     draggableOrigin: DraggableOrigin;
     dataCacheMap: DataCacheMap;
     gesture: Gesture;

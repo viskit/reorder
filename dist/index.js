@@ -125,22 +125,24 @@ class Reorder extends external_lit_namespaceObject.LitElement {
                             }
                         }
                     }
-                    const { index: draggableIndex, rect: draggableRect } = this.dataCacheMap.get(gestureDetail.data.draggable);
-                    this.dispatchEvent(new ReorderEvent({
-                        gestureDetail,
-                        hoverable: gestureDetail.data.hoverable,
-                        hoverContainer,
-                        hoverableRect: gestureDetail.data.hoverable
-                            ? this.dataCacheMap.get(gestureDetail.data.hoverable).rect
-                            : null,
-                        hoverIndex: gestureDetail.data.hoverIndex,
-                        draggableIndex,
-                        draggable: gestureDetail.data.draggable,
-                        container: gestureDetail.data.container,
-                        draggableRect,
-                        x: triggerX,
-                        y: triggerY,
-                    }));
+                    if (gestureDetail.data.hoverable) {
+                        const { index: draggableIndex, rect: draggableRect } = this.dataCacheMap.get(gestureDetail.data.draggable);
+                        this.dispatchEvent(new ReorderEvent({
+                            gestureDetail,
+                            hoverable: gestureDetail.data.hoverable,
+                            hoverContainer,
+                            hoverableRect: gestureDetail.data.hoverable
+                                ? this.dataCacheMap.get(gestureDetail.data.hoverable).rect
+                                : null,
+                            hoverIndex: gestureDetail.data.hoverIndex,
+                            draggableIndex,
+                            draggable: gestureDetail.data.draggable,
+                            container: gestureDetail.data.container,
+                            draggableRect,
+                            x: triggerX,
+                            y: triggerY,
+                        }));
+                    }
                     break;
                 }
             }
@@ -330,6 +332,11 @@ class Reorder extends external_lit_namespaceObject.LitElement {
         return this;
     }
 }
+Reorder.styles = external_lit_namespaceObject.css `
+    :host {
+      display: block;
+    }
+  `;
 (0,external_tslib_namespaceObject.__decorate)([
     (0,decorators_js_namespaceObject.property)({ type: String })
 ], Reorder.prototype, "draggableOrigin", void 0);

@@ -1,4 +1,4 @@
-import { LitElement } from "lit";
+import { LitElement, css } from "lit";
 import { property } from "lit/decorators.js";
 import { createGesture, Gesture, GestureDetail } from "@ionic/core";
 import { debounce } from "lodash";
@@ -140,6 +140,12 @@ export class DropEvent extends Event {
 }
 
 export class Reorder extends LitElement {
+  static styles = css`
+    :host {
+      display: block;
+    }
+  `;
+
   @property({ type: String })
   draggableOrigin: DraggableOrigin = "center-center";
 
@@ -193,26 +199,29 @@ export class Reorder extends LitElement {
             }
           }
         }
-        const { index: draggableIndex, rect: draggableRect } =
-          this.dataCacheMap.get(gestureDetail.data.draggable as HTMLElement);
-        this.dispatchEvent(
-          new ReorderEvent({
-            gestureDetail,
-            hoverable: gestureDetail.data.hoverable,
-            hoverContainer,
-            hoverableRect: gestureDetail.data.hoverable
-              ? this.dataCacheMap.get(gestureDetail.data.hoverable).rect
-              : null,
-            hoverIndex: gestureDetail.data.hoverIndex,
+        if (gestureDetail.data.hoverable) {
+          const { index: draggableIndex, rect: draggableRect } =
+            this.dataCacheMap.get(gestureDetail.data.draggable as HTMLElement);
+          this.dispatchEvent(
+            new ReorderEvent({
+              gestureDetail,
+              hoverable: gestureDetail.data.hoverable,
+              hoverContainer,
+              hoverableRect: gestureDetail.data.hoverable
+                ? this.dataCacheMap.get(gestureDetail.data.hoverable).rect
+                : null,
+              hoverIndex: gestureDetail.data.hoverIndex,
 
-            draggableIndex,
-            draggable: gestureDetail.data.draggable,
-            container: gestureDetail.data.container,
-            draggableRect,
-            x: triggerX,
-            y: triggerY,
-          })
-        );
+              draggableIndex,
+              draggable: gestureDetail.data.draggable,
+              container: gestureDetail.data.container,
+              draggableRect,
+              x: triggerX,
+              y: triggerY,
+            })
+          );
+        }
+
         break;
       }
     }
@@ -276,10 +285,10 @@ export class Reorder extends LitElement {
 
   public mutation = debounce((offset?: { x: number; y: number }) => {
     if (offset) {
-      if(offset.x !== this.offsetX || offset.y !== this.offsetY){
+      if (offset.x !== this.offsetX || offset.y !== this.offsetY) {
         this.offsetX = offset.x;
         this.offsetY = offset.y;
-      }else{
+      } else {
         return;
       }
     } else {
