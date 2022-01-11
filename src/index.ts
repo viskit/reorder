@@ -1,5 +1,5 @@
 import { LitElement, css } from "lit";
-import { property } from "lit/decorators.js";
+import { property,customElement } from "lit/decorators.js";
 import { createGesture, Gesture, GestureDetail } from "@ionic/core";
 import { debounce } from "lodash";
 
@@ -139,6 +139,7 @@ export class DropEvent extends Event {
   }
 }
 
+@customElement("viskit-reorder")
 export class Reorder extends LitElement {
   static styles = css`
     :host {
@@ -477,7 +478,6 @@ export class Reorder extends LitElement {
   }
 }
 
-window.customElements.define("viskit-reorder", Reorder);
 
 declare global {
   interface HTMLElementTagNameMap {

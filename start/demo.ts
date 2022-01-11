@@ -178,7 +178,6 @@ export class Demo extends LitElement {
   }
 
   onDrop({ data, complete }: DropEvent) {
-    console.log("ondrop");
     complete(data.after);
   }
 

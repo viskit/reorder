@@ -5,3 +5,4 @@
 .gitignore
 cypress.json
 tsconfig.json
+.parcel-cache

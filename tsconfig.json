@@ -1,20 +1,19 @@
 {
   "compilerOptions": {
-    "target": "es2015",
-    "module": "es6",
-    "moduleResolution": "node",
-    "noEmitOnError": true,
-    "lib": ["esnext", "dom", "scripthost"],
+    "target": "es6",
     "strict": false,
-    "esModuleInterop": false,
+    "lib":["DOM","ES2016"],
     "allowSyntheticDefaultImports": true,
     "experimentalDecorators": true,
-    "importHelpers": true,
-    "outDir": "./dist",
-    "sourceMap": true,
-    "inlineSources": true,
-    "rootDir": "./src",
-    "strictNullChecks": false,
-    "declaration": true
-  }
+    "jsxImportSource": "react",
+    "isolatedModules": false,
+    "esModuleInterop": true,
+    "moduleResolution": "Node",
+    "module": "es2020",
+    "useDefineForClassFields": false,
+    "declaration": true,
+    "resolveJsonModule": true,
+    "strictNullChecks": false
+  },
+  "include": ["src/**/*","start/**/*"]
 }
