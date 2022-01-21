@@ -72,58 +72,64 @@ let $b03e17997ed23475$export$335fca4219867448 = class $b03e17997ed23475$export$3
     constructor(){
         super(...arguments);
         this.draggableOrigin = "center-center";
+        this.rootContainer = this;
         this.dataCacheMap = null;
         this.containers = [
             this
         ];
+        this.i = 0;
         this.reorder = $1ZQrD$lodash.debounce((gestureDetail)=>{
             let { currentX: currentX , currentY: currentY , data: { triggerOffsetX: triggerOffsetX , triggerOffsetY: triggerOffsetY , draggable: draggable  } ,  } = gestureDetail;
-            const triggerX = currentX + triggerOffsetX + this.offsetX;
-            const triggerY = currentY + triggerOffsetY + this.offsetY;
+            const rootRect = this.rootContainer.getBoundingClientRect();
+            const triggerX = currentX - rootRect.x + triggerOffsetX + this.offsetX;
+            const triggerY = currentY - rootRect.y + triggerOffsetY + this.offsetY;
             for (let hoverContainer of this.containers){
-                const { x: x , y: y , width: width , height: height  } = this.dataCacheMap.get(hoverContainer).rect;
-                if (this.within(x, y, width, height, triggerX, triggerY)) {
-                    const childs = Array.from(hoverContainer.children);
-                    for(let i = 0, len = childs.length; i < len; i++){
-                        const child = childs[i];
-                        const data = this.dataCacheMap.get(child);
-                        if (data) {
-                            const { rect: { x: x , y: y , width: width , height: height  } , index: index ,  } = data;
-                            if (this.within(x, y, width, height, triggerX, triggerY)) {
-                                const hoverable = child;
-                                const hoverIndex = index;
-                                gestureDetail.data = Object.assign(Object.assign({
-                                }, gestureDetail.data), {
-                                    hoverable: hoverable,
-                                    hoverContainer: hoverContainer,
-                                    hoverIndex: hoverIndex,
-                                    draggable: gestureDetail.data.draggable,
-                                    container: gestureDetail.data.container,
-                                    hoverableRect: this.dataCacheMap.get(hoverable).rect,
-                                    x: triggerX,
-                                    y: triggerY
-                                });
-                                break;
+                const data = this.dataCacheMap.get(hoverContainer);
+                if (data) {
+                    const { x: x , y: y , width: width , height: height  } = data.rect;
+                    if (this.within(x, y, width, height, triggerX, triggerY)) {
+                        const childs = Array.from(hoverContainer.children);
+                        for(let i = 0, len = childs.length; i < len; i++){
+                            const child = childs[i];
+                            const data = this.dataCacheMap.get(child);
+                            if (data) {
+                                const { rect: { x: x , y: y , width: width , height: height  } , index: index ,  } = data;
+                                if (this.within(x, y, width, height, triggerX, triggerY)) {
+                                    const hoverable = child;
+                                    const hoverIndex = index;
+                                    gestureDetail.data = Object.assign(Object.assign({
+                                    }, gestureDetail.data), {
+                                        hoverable: hoverable,
+                                        hoverContainer: hoverContainer,
+                                        hoverIndex: hoverIndex,
+                                        draggable: gestureDetail.data.draggable,
+                                        container: gestureDetail.data.container,
+                                        hoverableRect: this.dataCacheMap.get(hoverable).rect,
+                                        x: triggerX,
+                                        y: triggerY
+                                    });
+                                    break;
+                                }
                             }
                         }
+                        if (gestureDetail.data.hoverable) {
+                            const { index: draggableIndex , rect: draggableRect  } = this.dataCacheMap.get(gestureDetail.data.draggable);
+                            this.dispatchEvent(new $b03e17997ed23475$export$13331832f7da8736({
+                                gestureDetail: gestureDetail,
+                                hoverable: gestureDetail.data.hoverable,
+                                hoverContainer: hoverContainer,
+                                hoverableRect: gestureDetail.data.hoverable ? this.dataCacheMap.get(gestureDetail.data.hoverable).rect : null,
+                                hoverIndex: gestureDetail.data.hoverIndex,
+                                draggableIndex: draggableIndex,
+                                draggable: gestureDetail.data.draggable,
+                                container: gestureDetail.data.container,
+                                draggableRect: draggableRect,
+                                x: triggerX,
+                                y: triggerY
+                            }));
+                        }
+                        break;
                     }
-                    if (gestureDetail.data.hoverable) {
-                        const { index: draggableIndex , rect: draggableRect  } = this.dataCacheMap.get(gestureDetail.data.draggable);
-                        this.dispatchEvent(new $b03e17997ed23475$export$13331832f7da8736({
-                            gestureDetail: gestureDetail,
-                            hoverable: gestureDetail.data.hoverable,
-                            hoverContainer: hoverContainer,
-                            hoverableRect: gestureDetail.data.hoverable ? this.dataCacheMap.get(gestureDetail.data.hoverable).rect : null,
-                            hoverIndex: gestureDetail.data.hoverIndex,
-                            draggableIndex: draggableIndex,
-                            draggable: gestureDetail.data.draggable,
-                            container: gestureDetail.data.container,
-                            draggableRect: draggableRect,
-                            x: triggerX,
-                            y: triggerY
-                        }));
-                    }
-                    break;
                 }
             }
         });
@@ -152,17 +158,30 @@ let $b03e17997ed23475$export$335fca4219867448 = class $b03e17997ed23475$export$3
     }
     calcCacheData() {
         this.dataCacheMap = new Map();
+        const rootRect = this.rootContainer.getBoundingClientRect();
         for(let index = 0, len = this.containers.length; index < len; index++){
             const container = this.containers[index];
             const map = new Map();
+            const containerRect = container.getBoundingClientRect();
             this.dataCacheMap.set(container, {
-                rect: container.getBoundingClientRect()
+                rect: {
+                    width: containerRect.width,
+                    height: containerRect.height,
+                    x: containerRect.x - rootRect.x,
+                    y: containerRect.y - rootRect.y
+                }
             });
             const childs = Array.from(container.children);
             for(let i = 0, len = childs.length; i < len; i++){
                 const child = childs[i];
+                const rect = child.getBoundingClientRect();
                 this.dataCacheMap.set(child, {
-                    rect: child.getBoundingClientRect(),
+                    rect: {
+                        width: rect.width,
+                        height: rect.height,
+                        x: rect.x - rootRect.x,
+                        y: rect.y - rootRect.y
+                    },
                     index: i
                 });
             }
@@ -184,7 +203,7 @@ let $b03e17997ed23475$export$335fca4219867448 = class $b03e17997ed23475$export$3
                         const { hoverContainer: hoverContainer , hoverable: hoverable , hoverIndex: hoverIndex  } = gestureDetail.data;
                         if (hoverContainer.children.length) hoverable.insertAdjacentElement(after ? "afterend" : "beforebegin", selectedItemEl);
                         else hoverContainer.appendChild(selectedItemEl);
-                        this.mutation();
+                        this.mutation(); // TODO
                     }
                 }, gestureDetail.data));
                 this.dispatchEvent(new $b03e17997ed23475$export$2066b1507471daea(gestureDetail, gestureDetail.data.draggable, gestureDetail.data.container));
@@ -227,48 +246,37 @@ let $b03e17997ed23475$export$335fca4219867448 = class $b03e17997ed23475$export$3
                         let triggerOffsetX = 0;
                         let triggerOffsetY = 0;
                         if (this.draggableOrigin !== "current") {
-                            const { startX: startX , startY: startY  } = gestureDetail;
-                            const { left: left , top: top , width: width , height: height  } = draggableRect;
+                            const { x: x , y: y , width: width , height: height  } = draggableRect;
                             switch(this.draggableOrigin){
                                 case "center-center":
-                                    triggerOffsetX = width / 2 + left;
-                                    triggerOffsetY = height / 2 + top;
+                                    triggerOffsetX = width / 2;
+                                    triggerOffsetY = height / 2;
                                     break;
                                 case "center-left":
-                                    triggerOffsetX = left;
-                                    triggerOffsetY = height / 2 + top;
+                                    triggerOffsetY = height / 2;
                                     break;
                                 case "center-right":
-                                    triggerOffsetX = width + left;
-                                    triggerOffsetY = height / 2 + top;
+                                    triggerOffsetX = width;
+                                    triggerOffsetY = height / 2;
                                     break;
                                 case "top-center":
-                                    triggerOffsetX = width / 2 + left;
-                                    triggerOffsetY = top;
-                                    break;
-                                case "top-left":
-                                    triggerOffsetX = left;
-                                    triggerOffsetY = top;
+                                    triggerOffsetX = width / 2;
                                     break;
                                 case "top-right":
-                                    triggerOffsetX = width + left;
-                                    triggerOffsetY = top;
+                                    triggerOffsetX = width;
                                     break;
                                 case "bottom-center":
-                                    triggerOffsetX = width / 2 + left;
-                                    triggerOffsetY = height + top;
+                                    triggerOffsetX = width / 2;
+                                    triggerOffsetY = height;
                                     break;
                                 case "bottom-left":
-                                    triggerOffsetX = left;
-                                    triggerOffsetY = height + top;
+                                    triggerOffsetY = height;
                                     break;
                                 case "bottom-right":
-                                    triggerOffsetX = width + left;
-                                    triggerOffsetY = height + top;
+                                    triggerOffsetX = width;
+                                    triggerOffsetY = height;
                                     break;
                             }
-                            triggerOffsetX -= startX;
-                            triggerOffsetY -= startY;
                             gestureDetail.data.triggerOffsetX = triggerOffsetX;
                             gestureDetail.data.triggerOffsetY = triggerOffsetY;
                             this.dispatchEvent(new $b03e17997ed23475$export$cc4ebe9deb7007ee(gestureDetail, draggable, container));
@@ -305,6 +313,11 @@ $b03e17997ed23475$var$__decorate([
         type: String
     })
 ], $b03e17997ed23475$export$335fca4219867448.prototype, "draggableOrigin", void 0);
+$b03e17997ed23475$var$__decorate([
+    $1ZQrD$litdecoratorsjs.property({
+        attribute: false
+    })
+], $b03e17997ed23475$export$335fca4219867448.prototype, "containers", void 0);
 $b03e17997ed23475$var$__decorate([
     $1ZQrD$litdecoratorsjs.property({
         type: String

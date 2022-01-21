@@ -1,7 +1,9 @@
 import { LitElement, css } from "lit";
-import { property,customElement } from "lit/decorators.js";
+import { property, customElement } from "lit/decorators.js";
 import { createGesture, Gesture, GestureDetail } from "@ionic/core";
 import { debounce } from "lodash";
+
+type Rect = { x: number; y: number; width: number; height: number };
 
 export type DraggableOrigin =
   | "current"
@@ -18,7 +20,7 @@ export type DraggableOrigin =
 type DataCacheMap = Map<
   HTMLElement,
   {
-    rect: DOMRect;
+    rect: Rect;
     index?: number;
   }
 >;
@@ -73,8 +75,8 @@ export type ReorderEventArgs = {
   hoverContainer: HTMLElement;
 
   draggableIndex: number;
-  hoverableRect: DOMRect;
-  draggableRect: DOMRect;
+  hoverableRect: Rect;
+  draggableRect: Rect;
 
   x: number;
   y: number;
@@ -123,8 +125,8 @@ export class ReorderEvent extends StartEvent {
   hoverContainer: HTMLElement;
 
   draggableIndex: number;
-  hoverableRect: DOMRect;
-  draggableRect: DOMRect;
+  hoverableRect: Rect;
+  draggableRect: Rect;
 
   x: number;
   y: number;
@@ -150,13 +152,18 @@ export class Reorder extends LitElement {
   @property({ type: String })
   draggableOrigin: DraggableOrigin = "center-center";
 
+  rootContainer: HTMLElement = this;
+
   dataCacheMap: DataCacheMap = null;
 
   gesture: Gesture;
 
   private gestureDetail: GestureDetail;
 
+  @property({ attribute: false })
   containers: HTMLElement[] = [this];
+
+  i = 0;
 
   private reorder = debounce((gestureDetail: GestureDetail) => {
     let {
@@ -165,65 +172,72 @@ export class Reorder extends LitElement {
       data: { triggerOffsetX, triggerOffsetY, draggable },
     } = gestureDetail;
 
-    const triggerX = currentX + triggerOffsetX + this.offsetX;
-    const triggerY = currentY + triggerOffsetY + this.offsetY;
+    const rootRect = this.rootContainer.getBoundingClientRect();
+
+    const triggerX = currentX - rootRect.x + triggerOffsetX + this.offsetX;
+    const triggerY = currentY - rootRect.y + triggerOffsetY + this.offsetY;
 
     for (let hoverContainer of this.containers) {
-      const { x, y, width, height } =
-        this.dataCacheMap.get(hoverContainer).rect;
-      if (this.within(x, y, width, height, triggerX, triggerY)) {
-        const childs = Array.from(hoverContainer.children);
-        for (let i = 0, len = childs.length; i < len; i++) {
-          const child = childs[i];
-          const data = this.dataCacheMap.get(child as HTMLElement);
-          if (data) {
-            const {
-              rect: { x, y, width, height },
-              index,
-            } = data;
-            if (this.within(x, y, width, height, triggerX, triggerY)) {
-              const hoverable = child as HTMLElement;
-              const hoverIndex = index;
-              gestureDetail.data = {
-                ...gestureDetail.data,
-                hoverable,
-                hoverContainer,
-                hoverIndex,
-                draggable: gestureDetail.data.draggable,
-                container: gestureDetail.data.container,
-                hoverableRect: this.dataCacheMap.get(hoverable).rect,
-                x: triggerX,
-                y: triggerY,
-              };
+      const data = this.dataCacheMap.get(hoverContainer);
+      if (data) {
+        const { x, y, width, height } = data.rect;
 
-              break;
+        if (this.within(x, y, width, height, triggerX, triggerY)) {
+          const childs = Array.from(hoverContainer.children);
+          for (let i = 0, len = childs.length; i < len; i++) {
+            const child = childs[i];
+            const data = this.dataCacheMap.get(child as HTMLElement);
+            if (data) {
+              const {
+                rect: { x, y, width, height },
+                index,
+              } = data;
+              if (this.within(x, y, width, height, triggerX, triggerY)) {
+                const hoverable = child as HTMLElement;
+                const hoverIndex = index;
+                gestureDetail.data = {
+                  ...gestureDetail.data,
+                  hoverable,
+                  hoverContainer,
+                  hoverIndex,
+                  draggable: gestureDetail.data.draggable,
+                  container: gestureDetail.data.container,
+                  hoverableRect: this.dataCacheMap.get(hoverable).rect,
+                  x: triggerX,
+                  y: triggerY,
+                };
+
+                break;
+              }
             }
           }
-        }
-        if (gestureDetail.data.hoverable) {
-          const { index: draggableIndex, rect: draggableRect } =
-            this.dataCacheMap.get(gestureDetail.data.draggable as HTMLElement);
-          this.dispatchEvent(
-            new ReorderEvent({
-              gestureDetail,
-              hoverable: gestureDetail.data.hoverable,
-              hoverContainer,
-              hoverableRect: gestureDetail.data.hoverable
-                ? this.dataCacheMap.get(gestureDetail.data.hoverable).rect
-                : null,
-              hoverIndex: gestureDetail.data.hoverIndex,
+          if (gestureDetail.data.hoverable) {
+            const { index: draggableIndex, rect: draggableRect } =
+              this.dataCacheMap.get(
+                gestureDetail.data.draggable as HTMLElement
+              );
+            this.dispatchEvent(
+              new ReorderEvent({
+                gestureDetail,
+                hoverable: gestureDetail.data.hoverable,
+                hoverContainer,
+                hoverableRect: gestureDetail.data.hoverable
+                  ? this.dataCacheMap.get(gestureDetail.data.hoverable).rect
+                  : null,
+                hoverIndex: gestureDetail.data.hoverIndex,
 
-              draggableIndex,
-              draggable: gestureDetail.data.draggable,
-              container: gestureDetail.data.container,
-              draggableRect,
-              x: triggerX,
-              y: triggerY,
-            })
-          );
-        }
+                draggableIndex,
+                draggable: gestureDetail.data.draggable,
+                container: gestureDetail.data.container,
+                draggableRect,
+                x: triggerX,
+                y: triggerY,
+              })
+            );
+          }
 
-        break;
+          break;
+        }
       }
     }
   });
@@ -263,18 +277,31 @@ export class Reorder extends LitElement {
 
   private calcCacheData() {
     this.dataCacheMap = new Map();
+    const rootRect = this.rootContainer.getBoundingClientRect();
 
     for (let index = 0, len = this.containers.length; index < len; index++) {
       const container = this.containers[index];
       const map = new Map();
+      const containerRect = container.getBoundingClientRect();
       this.dataCacheMap.set(container, {
-        rect: container.getBoundingClientRect(),
+        rect: {
+          width: containerRect.width,
+          height: containerRect.height,
+          x: containerRect.x - rootRect.x,
+          y: containerRect.y - rootRect.y,
+        },
       });
       const childs = Array.from(container.children);
       for (let i = 0, len = childs.length; i < len; i++) {
         const child = childs[i] as HTMLElement;
+        const rect = child.getBoundingClientRect();
         this.dataCacheMap.set(child, {
-          rect: child.getBoundingClientRect(),
+          rect: {
+            width: rect.width,
+            height: rect.height,
+            x: rect.x - rootRect.x,
+            y: rect.y - rootRect.y,
+          },
           index: i,
         });
       }
@@ -295,6 +322,7 @@ export class Reorder extends LitElement {
     } else {
       this.calcCacheData();
     }
+
     if (this.gestureDetail) {
       this.reorder(this.gestureDetail);
     }
@@ -325,7 +353,7 @@ export class Reorder extends LitElement {
               } else {
                 hoverContainer.appendChild(selectedItemEl);
               }
-              this.mutation();
+              this.mutation(); // TODO
             }
           }, gestureDetail.data)
         );
@@ -373,7 +401,7 @@ export class Reorder extends LitElement {
 
           const draggable: HTMLElement = gestureDetail.data.draggable;
           const container: HTMLElement = gestureDetail.data.container;
-          const draggableRect: DOMRect = this.dataCacheMap.get(draggable).rect;
+          const draggableRect: Rect = this.dataCacheMap.get(draggable).rect;
 
           if (draggable) {
             gestureDetail.data = {
@@ -386,55 +414,42 @@ export class Reorder extends LitElement {
             let triggerOffsetX = 0;
             let triggerOffsetY = 0;
             if (this.draggableOrigin !== "current") {
-              const { startX, startY } = gestureDetail;
-              const { left, top, width, height } = draggableRect;
+              const { x, y, width, height } = draggableRect;
               switch (this.draggableOrigin) {
                 case "center-center":
-                  triggerOffsetX = width / 2 + left;
-                  triggerOffsetY = height / 2 + top;
+                  triggerOffsetX = width / 2;
+                  triggerOffsetY = height / 2;
                   break;
                 case "center-left":
-                  triggerOffsetX = left;
-                  triggerOffsetY = height / 2 + top;
+                  triggerOffsetY = height / 2;
                   break;
                 case "center-right":
-                  triggerOffsetX = width + left;
-                  triggerOffsetY = height / 2 + top;
+                  triggerOffsetX = width;
+                  triggerOffsetY = height / 2;
                   break;
 
                 case "top-center":
-                  triggerOffsetX = width / 2 + left;
-                  triggerOffsetY = top;
-                  break;
-
-                case "top-left":
-                  triggerOffsetX = left;
-                  triggerOffsetY = top;
+                  triggerOffsetX = width / 2;
                   break;
 
                 case "top-right":
-                  triggerOffsetX = width + left;
-                  triggerOffsetY = top;
+                  triggerOffsetX = width;
                   break;
 
                 case "bottom-center":
-                  triggerOffsetX = width / 2 + left;
-                  triggerOffsetY = height + top;
+                  triggerOffsetX = width / 2;
+                  triggerOffsetY = height;
                   break;
 
                 case "bottom-left":
-                  triggerOffsetX = left;
-                  triggerOffsetY = height + top;
+                  triggerOffsetY = height;
                   break;
 
                 case "bottom-right":
-                  triggerOffsetX = width + left;
-                  triggerOffsetY = height + top;
+                  triggerOffsetX = width;
+                  triggerOffsetY = height;
                   break;
               }
-
-              triggerOffsetX -= startX;
-              triggerOffsetY -= startY;
 
               gestureDetail.data.triggerOffsetX = triggerOffsetX;
               gestureDetail.data.triggerOffsetY = triggerOffsetY;
@@ -477,7 +492,6 @@ export class Reorder extends LitElement {
     return this;
   }
 }
-
 
 declare global {
   interface HTMLElementTagNameMap {
